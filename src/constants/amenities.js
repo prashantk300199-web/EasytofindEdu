@@ -1,46 +1,104 @@
-const AMENITIES = [
-  { id: 1, key: "wifi", label: "Wi-Fi" },
-  { id: 2, key: "food", label: "Food / Mess" },
-  { id: 3, key: "laundry", label: "Laundry" },
-  { id: 4, key: "parking", label: "Parking" },
-  { id: 5, key: "power_backup", label: "Power Backup" },
-  { id: 6, key: "housekeeping", label: "Housekeeping" },
-  { id: 7, key: "cctv", label: "CCTV Surveillance" },
-  { id: 8, key: "warden", label: "Warden / Caretaker" },
-  { id: 9, key: "lift", label: "Lift" },
-  { id: 10, key: "ro_water", label: "RO Drinking Water" },
-  { id: 11, key: "geyser", label: "Geyser" },
-  { id: 12, key: "ac", label: "Air Conditioning" },
-  { id: 13, key: "non_ac", label: "Non-AC Rooms" },
-  { id: 14, key: "study_room", label: "Study Room" },
-  { id: 15, key: "common_tv", label: "Common TV Room" },
-  { id: 16, key: "fridge", label: "Refrigerator" },
-  { id: 17, key: "gym", label: "Gym" },
-  { id: 18, key: "security_guard", label: "Security Guard" },
-  { id: 19, key: "biometric_entry", label: "Biometric Entry" },
-  { id: 20, key: "visitor_allowed", label: "Visitors Allowed" },
-  { id: 21, key: "clean_drinking_water", label: "Clean Drinking Water" },
-  { id: 22, key: "fire_safety", label: "Fire Safety" },
-  { id: 23, key: "first_aid", label: "First Aid" },
-  { id: 24, key: "daily_cleaning", label: "Daily Cleaning" },
-  { id: 25, key: "bed_with_mattress", label: "Bed with Mattress" },
-  { id: 26, key: "cupboard", label: "Cupboard / Almirah" },
-  { id: 27, key: "study_table", label: "Study Table" },
-  { id: 28, key: "balcony", label: "Balcony" },
-  { id: 29, key: "attached_bathroom", label: "Attached Bathroom" },
-  { id: 30, key: "western_toilet", label: "Western Toilet" },
-  { id: 31, key: "indian_toilet", label: "Indian Toilet" },
-  { id: 32, key: "hot_water", label: "Hot Water" },
-  { id: 33, key: "cold_water", label: "Cold Water" },
-  { id: 34, key: "wifi_24x7", label: "24x7 Wi-Fi" },
-  { id: 35, key: "meal_veg", label: "Veg Meals" },
-  { id: 36, key: "meal_non_veg", label: "Non-Veg Meals" },
-  { id: 37, key: "tiffin_service", label: "Tiffin Service" },
-  { id: 38, key: "generator", label: "Generator Backup" },
-  { id: 39, key: "washing_machine", label: "Washing Machine" },
-  { id: 40, key: "iron_facility", label: "Iron Facility" },
-];
+const AMENITIES = {
+  // 1. Room Amenities
+  room: [
+    { key: "mattress", label: "Mattress" },
+    { key: "pillow", label: "Pillow" },
+    { key: "bed_with_storage", label: "Bed with Storage" },
+    { key: "wardrobe", label: "Wardrobe / Almirah" },
+    { key: "study_table", label: "Study Table" },
+    { key: "study_chair", label: "Study Chair" },
+    { key: "bookshelf", label: "Bookshelf" },
+    { key: "shoe_rack", label: "Shoe Rack" },
+    { key: "mirror", label: "Mirror" },
+    { key: "curtains", label: "Curtains" },
+    { key: "fan", label: "Fan" },
+    { key: "ac", label: "Air Conditioning (AC)" },
+    { key: "cooler", label: "Air Cooler" },
+    { key: "room_heater", label: "Room Heater" },
+    { key: "attached_bathroom", label: "Attached Bathroom" },
+    { key: "balcony", label: "Private Balcony" },
+  ],
 
-export const AMENITY_KEYS = AMENITIES.map((a) => a.key);
+  // 2. Washroom Amenities
+  washroom: [
+    { key: "indian_toilet", label: "Indian Toilet" },
+    { key: "western_toilet", label: "Western Toilet" },
+    { key: "geyser", label: "Geyser / Hot Water" },
+    { key: "24x7_water_in_washroom", label: "24x7 Washroom Water" },
+    { key: "separate_bath_and_toilet", label: "Separate Bath & Toilet" },
+  ],
+
+  // 3. Food & Kitchen
+  food: [
+    { key: "mess_facility", label: "Mess / Food Facility" },
+    { key: "veg_food", label: "Pure Veg Food" },
+    { key: "non_veg_food", label: "Non-Veg Food Available" },
+    { key: "breakfast_available", label: "Breakfast" },
+    { key: "lunch_available", label: "Lunch" },
+    { key: "dinner_available", label: "Dinner" },
+    { key: "dining_hall", label: "Dining Hall" },
+    { key: "inhouse_kitchen", label: "In-house Kitchen" },
+    { key: "tiffin_service", label: "Tiffin Service" },
+    { key: "refrigerator", label: "Common Refrigerator" },
+    { key: "induction_allowed", label: "Induction Allowed in Room" },
+  ],
+
+  // 4. Water & Utilities
+  utilities: [
+    { key: "ro_water", label: "RO Drinking Water" },
+    { key: "water_cooler", label: "Water Cooler" },
+    { key: "24x7_water_supply", label: "24x7 General Water Supply" },
+    { key: "electricity_backup", label: "Power Backup (Generator)" },
+    { key: "inverter_backup", label: "Inverter Backup" },
+  ],
+
+  // 5. Internet & Connectivity
+  connectivity: [
+    { key: "wifi", label: "Wi-Fi" },
+    { key: "high_speed_internet", label: "High-Speed Internet" },
+  ],
+
+  // 6. Laundry & Cleaning
+  cleaning: [
+    { key: "washing_machine", label: "Washing Machine" },
+    { key: "paid_laundry_service", label: "Paid Laundry Service" },
+    { key: "drying_area", label: "Clothes Drying Area" },
+    { key: "daily_room_cleaning", label: "Daily Room Cleaning" },
+    { key: "weekly_room_cleaning", label: "Weekly Room Cleaning" },
+  ],
+
+  // 7. Safety & Security
+  security: [
+    { key: "cctv", label: "CCTV Surveillance" },
+    { key: "security_guard_24x7", label: "24x7 Security Guard" },
+    { key: "biometric_entry", label: "Biometric / Card Entry" },
+    { key: "visitor_register", label: "Visitor Register" },
+    { key: "fire_extinguisher", label: "Fire Extinguisher" },
+    { key: "first_aid_kit", label: "First Aid Kit" },
+    { key: "full_time_warden", label: "Full-time Warden" },
+  ],
+
+  // 8. Building & Accessibility
+  building: [
+    { key: "lift", label: "Lift / Elevator" },
+    { key: "parking", label: "Parking Space" },
+    { key: "wheelchair_access", label: "Wheelchair Accessible" },
+    { key: "terrace_access", label: "Terrace Access" },
+  ],
+
+  // 9. Common & Recreation
+  recreation: [
+    { key: "common_hall", label: "Common Hall / Lounge" },
+    { key: "study_room", label: "Dedicated Study Room" },
+    { key: "library", label: "Library" },
+    { key: "gym", label: "Gym / Fitness Center" },
+    { key: "indoor_games", label: "Indoor Games (TT, Carrom, etc.)" },
+    { key: "newspaper_magazine", label: "Newspapers & Magazines" },
+    { key: "tv_in_common_area", label: "TV in Common Area" },
+  ],
+};
+
+// Yeh loop saare keys ko ek single array mein nikaal lega for Validation
+export const AMENITY_KEYS = Object.values(AMENITIES).flatMap((cat) => cat.map((a) => a.key));
 
 export default AMENITIES;

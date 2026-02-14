@@ -1,35 +1,36 @@
 import Hostel from "../models/Hostel.js";
 import User from "../models/User.js";
-import { deleteMultipleImages } from "../services/cloudinary.service.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import generateSlug from "../utils/slugify.js";
 import maskName from "../utils/maskName.js";
 import generateSearchTags from "../utils/generateSearchTags.js";
-import { createHostelSchema, updateHostelSchema } from "../validators/hostel.validator.js";
+import { createHostelSchema } from "../validators/hostel.validator.js";
 
+// Helper for Parsing
 const parseHostelBody = (req) => {
   if (req.body.data) {
-    if (typeof req.body.data === "string") {
-      try {
-        return JSON.parse(req.body.data);
-      } catch (e) {
-        throw new ApiError(400, "Invalid JSON in data field.");
-      }
+    try {
+      return typeof req.body.data === "string" ? JSON.parse(req.body.data) : req.body.data;
+    } catch (e) {
+      throw new ApiError(400, "Invalid JSON in data field.");
     }
-    return req.body.data;
   }
-  const { photos, ...rest } = req.body;
-  return rest;
+  return req.body;
 };
 
+// Helper for Detailed Validation Logs
 const validateBody = (schema, data) => {
   const { error, value } = schema.validate(data, {
     abortEarly: false,
     stripUnknown: true,
   });
+
   if (error) {
+    // Terminal mein error details check karne ke liye:
+    console.log("❌ JOI VALIDATION FAILED:", JSON.stringify(error.details, null, 2));
+    
     const errors = error.details.map((detail) => ({
       field: detail.path.join("."),
       message: detail.message,
@@ -39,15 +40,11 @@ const validateBody = (schema, data) => {
   return value;
 };
 
-
-
 export const createHostel = asyncHandler(async (req, res) => {
-
-  console.log("REQ BODY:", JSON.stringify(req.body));
-console.log("REQ BODY KEYS:", Object.keys(req.body));
   const parsed = parseHostelBody(req);
+  
+  // Naya Fixed Schema use kar raha hai jo 'location' handle karega
   const hostelData = validateBody(createHostelSchema, parsed);
-  const { coordinates, ...rest } = hostelData;
 
   const photos = [];
   if (req.files && req.files.length > 0) {
@@ -60,11 +57,8 @@ console.log("REQ BODY KEYS:", Object.keys(req.body));
     throw new ApiError(400, "At least one photo is required.");
   }
 
-  if (photos.length > 5) {
-    throw new ApiError(400, "Maximum 5 photos allowed.");
-  }
-
-  const baseSlug = generateSlug(`${rest.name} ${rest.address.city}`);
+  // Slug Generation
+  const baseSlug = generateSlug(`${hostelData.name} ${hostelData.address.city}`);
   let slug = baseSlug;
   let counter = 1;
   while (await Hostel.findOne({ slug })) {
@@ -72,17 +66,14 @@ console.log("REQ BODY KEYS:", Object.keys(req.body));
     counter++;
   }
 
+  // Final Database Creation
   const hostel = await Hostel.create({
-    ...rest,
+    ...hostelData,
     owner: req.user._id,
     photos,
     slug,
-    masked_name: maskName(rest.name),
-    location: {
-      type: "Point",
-      coordinates: [coordinates.lng, coordinates.lat],
-    },
-    search_tags: generateSearchTags(rest),
+    masked_name: maskName(hostelData.name),
+    search_tags: generateSearchTags(hostelData),
   });
 
   await User.findByIdAndUpdate(req.user._id, { $inc: { totalHostels: 1 } });
@@ -151,19 +142,19 @@ export const updateHostel = asyncHandler(async (req, res) => {
   const updateData = validateBody(updateHostelSchema, parsed);
   const { coordinates, ...fields } = updateData;
 
+  // Photos handle karne ka logic (Same as before)
   if (req.files && req.files.length > 0) {
     const existingCount = hostel.photos.length;
     const newCount = req.files.length;
-
     if (existingCount + newCount > 5) {
-      throw new ApiError(400, `Cannot upload. You already have ${existingCount} photos. Max is 5.`);
+      throw new ApiError(400, `Max 5 photos allowed. Current: ${existingCount}`);
     }
-
     for (const file of req.files) {
       hostel.photos.push({ url: file.path, publicId: file.filename });
     }
   }
 
+  // Location update
   if (coordinates) {
     hostel.location = {
       type: "Point",
@@ -171,27 +162,40 @@ export const updateHostel = asyncHandler(async (req, res) => {
     };
   }
 
-  const fieldsToUpdate = [
-    "name", "hostel_type", "description", "address", "rent",
-    "rooms", "amenities", "nearby", "rules", "meal_plan", "notice_period_days",
+  // --- NAYA NESTED UPDATE LOGIC ---
+  // In sabhi objects ko hum direct assign kar sakte hain kyunki Joi ne inhe validate kar diya hai
+  const nestedObjects = [
+    "address", "rent", "meal_plan", "laundry", "washroom_details", 
+    "security", "rules", "nearby_distances", "building_details", "legal_docs"
   ];
 
-  for (const field of fieldsToUpdate) {
+  nestedObjects.forEach((obj) => {
+    if (fields[obj] !== undefined) {
+      // Pura object overwrite karne ki jagah existing fields ko update karega
+      hostel[obj] = { ...hostel[obj], ...fields[obj] };
+    }
+  });
+
+  // Arrays aur basic fields update
+  const otherFields = ["name", "hostel_type", "description", "is_open", "in_room_amenities", "common_amenities", "recreation", "search_tags"];
+  
+  otherFields.forEach((field) => {
     if (fields[field] !== undefined) {
       hostel[field] = fields[field];
     }
-  }
+  });
 
   if (fields.name) {
     hostel.masked_name = maskName(fields.name);
   }
 
+  // Search tags generate karna naye data ke hisaab se
   hostel.search_tags = generateSearchTags(hostel);
 
   await hostel.save();
 
   res.status(200).json(
-    new ApiResponse(200, "Hostel updated.", hostel)
+    new ApiResponse(200, "Hostel updated successfully.", hostel)
   );
 });
 
