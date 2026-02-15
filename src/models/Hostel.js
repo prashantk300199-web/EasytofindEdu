@@ -1,45 +1,62 @@
 import mongoose from "mongoose";
-import { HOSTEL_TYPE, ROOM_TYPE, HOSTEL_STATUS, GUEST_POLICY } from "../constants/enums.js";
+import { HOSTEL_TYPE, HOSTEL_STATUS } from "../constants/enums.js";
+
+// Room sharing inventory based on your handwritten notes
+const ROOM_TYPES = [
+  "single_sharing_wall",
+  "single_sharing_partition",
+  "single_sharing_attached_washroom",
+  "double_sharing_wall",
+  "double_sharing_partition",
+  "double_sharing_attached_washroom",
+  "triple_sharing_wall",
+  "triple_sharing_partition"
+];
 
 const roomSchema = new mongoose.Schema({
-  room_type: { type: String, enum: Object.values(ROOM_TYPE), required: true },
-  total_beds: { type: Number, required: true, min: 1 }, // Updated from 'beds'
-  available_beds: { type: Number, required: true, min: 0 },
-  attached_bathroom: { type: Boolean, default: false },
+  room_type: { 
+    type: String, 
+    enum: ROOM_TYPES, 
+    required: true 
+  },
+  total_beds: { type: Number, required: true, min: 1 }, // Updated: bed focus
+  available_beds_count: { type: Number, default: 0 }, // How many beds available
+  monthly_rent: { type: Number, required: true, min: 0 }, // Price per bed
+  is_available: { type: Boolean, default: true }, // Available or not
   ac: { type: Boolean, default: false },
-  cooler: { type: Boolean, default: false }, // New field
 }, { _id: true });
 
-const nearbySchema = new mongoose.Schema({
-  name: { type: String, required: true, trim: true },
-  distance_km: { type: Number, required: true, min: 0 },
+const mealPlanSchema = new mongoose.Schema({
+  frequency: { type: String, enum: ["2_times", "3_times", "4_times"], required: true },
+  meal_type: { type: String, enum: ["veg", "non_veg", "both"], required: true },
+  service_type: { type: String, enum: ["in_house_kitchen", "tiffin_service"], required: true },
+  menu_card: { // Price ki jagah Menu Card Upload
+    url: { type: String },
+    publicId: { type: String }
+  }
+}, { _id: true });
+
+const distanceItemSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  distance_km: { type: Number, required: true, min: 0 }
 }, { _id: true });
 
 const hostelSchema = new mongoose.Schema({
-  // 1. Basic Details
   owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
   name: { type: String, required: true, trim: true, maxlength: 200 },
   masked_name: { type: String, trim: true },
   slug: { type: String, unique: true, lowercase: true, index: true },
-  hostel_type: { type: String, enum: [...Object.values(HOSTEL_TYPE), "co-ed"], required: true }, // Added co-ed
+  hostel_type: { type: String, enum: [...Object.values(HOSTEL_TYPE), "co-ed"], required: true },
   description: { type: String, required: true, maxlength: 2000 },
-  is_open: { type: Boolean, default: true },
-  status: { type: String, enum: Object.values(HOSTEL_STATUS), default: HOSTEL_STATUS.PENDING },
-
-  // 2. Media
   photos: [{
     url: { type: String, required: true },
     publicId: { type: String, required: true },
   }],
-  video_url: { type: String, default: "" }, // New field
-
-  // 3. Address
   address: {
-    area: { type: String, required: true }, // New field
-    subarea: { type: String, default: "" }, // New field
-    locality: { type: String, default: "" }, // New field
     line1: { type: String, required: true },
     line2: { type: String, default: "" },
+    area: { type: String, required: true, index: true }, 
+    subarea: { type: String, required: true }, 
     city: { type: String, required: true, index: true },
     state: { type: String, required: true },
     pincode: { type: String, required: true },
@@ -47,59 +64,34 @@ const hostelSchema = new mongoose.Schema({
   },
   location: {
     type: { type: String, enum: ["Point"], default: "Point" },
-    coordinates: { type: [Number], default: [0, 0] }, // [longitude, latitude]
+    coordinates: { type: [Number], required: true }, // [longitude, latitude]
   },
-  search_tags: [{ type: String }],
-
-  // 4. Rent & Charges
   rent: {
-    monthly: { type: Number, required: true, min: 0 },
-    security_deposit: { type: Number, default: 0, min: 0 },
-    maintenance_charge: { type: Number, default: 0, min: 0 },
-    electricity_included: { type: Boolean, default: false },
-    notice_period_days: { type: Number, default: 30, min: 0 },
+    // Security Deposit updated to Dropdown Type
+    security_deposit_type: { 
+      type: String, 
+      enum: ["two_month_fee", "one_month_fee", "15_day_fee", "no_deposit"],
+      required: true 
+    },
+    registration_fee: { type: Number, default: 0, min: 0 },
+    // electricity_included checkbox removed per request
   },
-
-  // 5. Room Details
   rooms: [roomSchema],
-
-  // 6. Meal Plan
-  meal_plan: {
-    breakfast: { type: Boolean, default: false },
-    lunch: { type: Boolean, default: false },
-    dinner: { type: Boolean, default: false },
-    meals_per_day: { type: Number, enum: [2, 3, 4], default: 3 },
-    veg_only: { type: Boolean, default: false },
-    non_veg_available: { type: Boolean, default: false },
-    monthly_food_charge: { type: Number, default: 0, min: 0 },
-    dining_hall: { type: Boolean, default: false },
-    kitchen_available: { type: Boolean, default: false },
-    tiffin_service: { type: Boolean, default: false },
-  },
-
-  // 7 & 8. Amenities (Arrays for flexibility)
-  in_room_amenities: [{ type: String }], // mattress, pillow, study_table, etc.
-  common_amenities: [{ type: String }], // wifi, ro_water, power_backup, etc.
-
-  // 9. Laundry
+  meal_plans: [mealPlanSchema],
+  in_room_amenities: [{ type: String }],
+  common_amenities: [{ type: String }],
+  recreation: [{ type: String }],
   laundry: {
     washing_machine: { type: Boolean, default: false },
     paid_laundry_service: { type: Boolean, default: false },
     drying_area: { type: Boolean, default: false },
   },
-
-  // 10. Recreation & Facilities
-  recreation: [{ type: String }], // library, gym, terrace_access, etc.
-
-  // 11. Washroom Details
   washroom_details: {
     indian_toilet: { type: Boolean, default: false },
     western_toilet: { type: Boolean, default: false },
     attached_washroom_available: { type: Boolean, default: false },
     washroom_to_student_ratio: { type: String, default: "" },
   },
-
-  // 12. Security
   security: {
     full_time_warden: { type: Boolean, default: false },
     cctv: { type: Boolean, default: false },
@@ -108,8 +100,6 @@ const hostelSchema = new mongoose.Schema({
     visitor_register: { type: Boolean, default: false },
     first_aid_kit: { type: Boolean, default: false },
   },
-
-  // 13. Rules
   rules: {
     gate_close_time: { type: String, default: "22:00" },
     late_entry_allowed: { type: Boolean, default: false },
@@ -117,39 +107,22 @@ const hostelSchema = new mongoose.Schema({
     alcohol_allowed: { type: Boolean, default: false },
     guest_policy: {
       type: String,
-      enum: ["not_allowed", "day_only", "allowed"],
-      default: "day_only",
+      enum: ["family_only", "friends_only", "both_allowed", "no_one_allowed"],
+      default: "family_only",
     },
     pets_allowed: { type: Boolean, default: false },
     custom_rules: [{ type: String }],
   },
-
-  // 14. Nearby Distances
   nearby_distances: {
-    college_distance_km: { type: Number, default: null },
-    coaching_distance_km: { type: Number, default: null },
-    metro_distance_km: { type: Number, default: null },
-    bus_stop_distance_km: { type: Number, default: null },
-    railway_station_distance_km: { type: Number, default: null },
-    airport_distance_km: { type: Number, default: null },
-    hospital_distance_km: { type: Number, default: null },
-    police_station_distance_km: { type: Number, default: null },
-    main_road_distance_km: { type: Number, default: null },
-    city_center_distance_km: { type: Number, default: null },
-    mall_distance_km: { type: Number, default: null },
-    park_distance_km: { type: Number, default: null },
-    library_distance_km: { type: Number, default: null },
-    custom: [nearbySchema],
+    // Categorized Distances
+    institutes: [distanceItemSchema], // PW, Allen etc.
+    landmarks: [distanceItemSchema], // Station, Bus Stand etc.
   },
-
-  // 15. Building Details
   building_details: {
     building_age_years: { type: Number, min: 0 },
     flooring_type: { type: String, enum: ["tiles", "marble", "granite", "mosaic"] },
     number_of_floors: { type: Number, min: 1 },
   },
-
-  // 16. Legal Documents
   legal_docs: {
     hostel_registration: { type: Boolean, default: false },
     form_c: { type: Boolean, default: false },
@@ -159,21 +132,13 @@ const hostelSchema = new mongoose.Schema({
     fire_noc: { type: Boolean, default: false },
     hostel_association_member: { type: Boolean, default: false },
   },
-
-  // Analytics & Sorting
-  rating_summary: {
-    overall: { type: Number, default: 0 },
-    total_reviews: { type: Number, default: 0 },
-  },
-  views_count: { type: Number, default: 0 },
-  leads_count: { type: Number, default: 0 },
-  sort_priority: { type: Number, default: 0 },
-
+  notice_period_days: { type: Number, default: 30, min: 0 },
+  status: { type: String, enum: Object.values(HOSTEL_STATUS), default: HOSTEL_STATUS.PENDING },
+  is_open: { type: Boolean, default: true },
 }, { timestamps: true });
 
-// Indexes for performance
 hostelSchema.index({ location: "2dsphere" });
-hostelSchema.index({ name: "text", "address.city": "text", search_tags: "text" });
+hostelSchema.index({ name: "text", "address.city": "text", "address.area": "text" });
 
 const Hostel = mongoose.model("Hostel", hostelSchema);
 export default Hostel;
