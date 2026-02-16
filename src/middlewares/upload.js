@@ -3,7 +3,7 @@ import { profileStorage, hostelStorage } from "../config/cloudinary.js";
 
 export const uploadProfilePhoto = multer({
   storage: profileStorage,
-  limits: { fileSize: 2 * 1024 * 1024 },
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith("image/")) {
       cb(null, true);
@@ -15,7 +15,7 @@ export const uploadProfilePhoto = multer({
 
 export const uploadHostelPhotos = multer({
   storage: hostelStorage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith("image/")) {
       cb(null, true);
