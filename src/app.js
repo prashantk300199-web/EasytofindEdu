@@ -21,7 +21,19 @@ const app = express();
 
 app.use(helmet());
 app.use(cors({
-  origin: env.frontendUrl,
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      'https://vidyamarg.org',
+      'https://www.vidyamarg.org',
+      'http://localhost:5173', // for development
+    ];
+    
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 app.use(morgan("dev"));
