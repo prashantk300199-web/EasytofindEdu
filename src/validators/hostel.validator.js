@@ -11,13 +11,16 @@ const ROOM_TYPES = [
   "double_sharing_partition",
   "double_sharing_attached_washroom",
   "triple_sharing_wall",
-  "triple_sharing_partition"
+  "triple_sharing_partition",
+  "triple_sharing_attached_washroom",
+  "quad_sharing_wall",
+  "quad_sharing_attached_washroom",
 ];
 
 // 1. Room Item Schema (Beds & Availability focus)
 const roomItemSchema = Joi.object({
   room_type: Joi.string().valid(...ROOM_TYPES).required(),
-  total_beds: Joi.number().integer().min(1).required(), 
+  total_beds: Joi.number().integer().min(1).required(),
   monthly_rent: Joi.number().min(0).required(),
   is_available: Joi.boolean().required(),
   available_beds_count: Joi.number().integer().min(0).default(0),
@@ -54,10 +57,10 @@ export const createHostelSchema = Joi.object({
   address: Joi.object({
     line1: Joi.string().trim().required(),
     line2: Joi.string().trim().allow(""),
-    area: Joi.string().trim().required(), 
-    subarea: Joi.string().trim().required(), 
+    area: Joi.string().trim().required(),
+    subarea: Joi.string().trim().required(),
     pincode: Joi.string().trim().length(6).required(),
-    city: Joi.string().trim().required(), 
+    city: Joi.string().trim().required(),
     state: Joi.string().trim().required(),
     country: Joi.string().trim().default("India"),
   }).required(),
@@ -71,9 +74,9 @@ export const createHostelSchema = Joi.object({
   // --- Pricing & Charges (Security Deposit Dropdown) ---
   rent: Joi.object({
     security_deposit_type: Joi.string().valid(
-      "two_month_fee", 
-      "one_month_fee", 
-      "15_day_fee", 
+      "two_month_fee",
+      "one_month_fee",
+      "15_day_fee",
       "no_deposit"
     ).required(),
     registration_fee: Joi.number().min(0).default(0),
@@ -118,9 +121,9 @@ export const createHostelSchema = Joi.object({
     smoking_allowed: Joi.boolean().default(false),
     alcohol_allowed: Joi.boolean().default(false),
     guest_policy: Joi.string().valid(
-      "family_only", 
-      "friends_only", 
-      "both_allowed", 
+      "family_only",
+      "friends_only",
+      "both_allowed",
       "no_one_allowed"
     ).default("family_only"),
     pets_allowed: Joi.boolean().default(false),
@@ -142,7 +145,7 @@ export const createHostelSchema = Joi.object({
 
   legal_docs: Joi.object({
     hostel_registration: Joi.boolean().default(false),
-    form_c: Joi.boolean().default(false),
+    form_3: Joi.boolean().default(false),
     food_license: Joi.boolean().default(false),
     character_certificate: Joi.boolean().default(false),
     trade_license: Joi.boolean().default(false),

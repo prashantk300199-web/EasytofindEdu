@@ -5,6 +5,7 @@ import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import env from "./config/env.js";
 import errorHandler from "./middlewares/errorHandler.js";
+import { requestLogger, securityHeaders, validateRequestSize } from "./middlewares/requestLogger.js";
 import authRoutes from "./routes/auth.routes.js";
 import ownerRoutes from "./routes/owner.routes.js";
 import hostelRoutes from "./routes/hostel.routes.js";
@@ -19,13 +20,21 @@ import ApiResponse from "./utils/ApiResponse.js";
 
 const app = express();
 
+// Security middleware - Applied first
 app.use(helmet());
+app.use(securityHeaders);
+app.use(validateRequestSize);
+
+// CORS configuration for cross-device compatibility
+// MUST be before auth guards to handle preflight requests properly
 app.use(cors({
   origin: (origin, callback) => {
     const allowedOrigins = [
       'https://vidyamarg.org',
       'https://www.vidyamarg.org',
       'http://localhost:5173', // for development
+      'http://localhost:3000', // alternative dev port
+      'http://localhost:8080', // alternative dev port
     ];
     
     if (!origin || allowedOrigins.includes(origin)) {
@@ -35,12 +44,26 @@ app.use(cors({
     }
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['X-Total-Count', 'X-Page-Number', 'X-Request-ID', 'X-Response-Time'],
+  maxAge: 86400, // 24 hours - cache preflight requests
 }));
+
+// Handle preflight requests explicitly
+app.options('*', cors());
+
+// Logging middleware
 app.use(morgan("dev"));
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true }));
+app.use(requestLogger);
+
+// Body parsers with appropriate limits for file uploads
+// Increased limits to handle multiple image uploads (5 × 10MB = 50MB)
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(cookieParser());
 
+// Health check endpoints
 app.get("/", (req, res) => {
   res.status(200).json(
     new ApiResponse(200, "Vidya Marg API is running.")
@@ -52,10 +75,13 @@ app.get("/api/v1/health", (req, res) => {
     new ApiResponse(200, "Server is healthy.", {
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),
+      environment: env.nodeEnv,
+      version: "1.0.0",
     })
   );
 });
 
+// API Routes (Protected)
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/owner", ownerRoutes);
 app.use("/api/v1/hostels", hostelRoutes);
@@ -67,12 +93,14 @@ app.use("/api/v1/admin/owners", adminOwnerRoutes);
 app.use("/api/v1/admin/hostels", adminHostelRoutes);
 app.use("/api/v1/public", publicRoutes);
 
+// 404 handler
 app.all("*", (req, res) => {
   res.status(404).json(
     new ApiResponse(404, `Route ${req.originalUrl} not found.`)
   );
 });
 
+// Error handler (must be last middleware)
 app.use(errorHandler);
 
 export default app;

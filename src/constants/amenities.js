@@ -4,6 +4,7 @@ const AMENITIES = {
     { key: "mattress", label: "Mattress" },
     { key: "pillow", label: "Pillow" },
     { key: "bed_with_storage", label: "Bed with Storage" },
+    { key: "bed_without_storage", label: "Bed without Storage" },
     { key: "wardrobe", label: "Wardrobe / Almirah" },
     { key: "study_table", label: "Study Table" },
     { key: "study_chair", label: "Study Chair" },

@@ -10,7 +10,10 @@ const ROOM_TYPES = [
   "double_sharing_partition",
   "double_sharing_attached_washroom",
   "triple_sharing_wall",
-  "triple_sharing_partition"
+  "triple_sharing_partition",
+  "triple_sharing_attached_washroom",
+  "quad_sharing_wall",
+  "quad_sharing_attached_washroom",
 ];
 
 const roomSchema = new mongoose.Schema({
@@ -125,7 +128,7 @@ const hostelSchema = new mongoose.Schema({
   },
   legal_docs: {
     hostel_registration: { type: Boolean, default: false },
-    form_c: { type: Boolean, default: false },
+    form_3: { type: Boolean, default: false },
     food_license: { type: Boolean, default: false },
     character_certificate: { type: Boolean, default: false },
     trade_license: { type: Boolean, default: false },
