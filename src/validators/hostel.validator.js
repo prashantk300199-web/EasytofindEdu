@@ -131,10 +131,10 @@ export const createHostelSchema = Joi.object({
   }).default({}),
 
   // --- Categorized Proximity (PW, Allen, Station) ---
-  nearby_distances: Joi.object({
-    institutes: Joi.array().items(distanceItemSchema).default([]),
-    landmarks: Joi.array().items(distanceItemSchema).default([]),
-  }).default({}),
+  // nearby_distances: Joi.object({
+  //   institutes: Joi.array().items(distanceItemSchema).default([]),
+  //   landmarks: Joi.array().items(distanceItemSchema).default([]),
+  // }).default({}),
 
   // --- Building & Legal ---
   building_details: Joi.object({

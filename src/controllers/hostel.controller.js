@@ -402,14 +402,19 @@ export const getHostelById = asyncHandler(async (req, res) => {
  * @throws {ApiError} 400 - Validation failed or photo limit exceeded
  * @throws {ApiError} 404 - Hostel not found
  */
+/**
+ * Update hostel details
+ * @route PUT /api/v1/hostels/:id
+ * @access Private - Owner only
+ */
 export const updateHostel = asyncHandler(async (req, res) => {
   const startTime = Date.now();
   const { id } = req.params;
   const userId = req.user._id;
-  const uploadedPublicIds = []; // Track uploaded files for cleanup on failure
+  const uploadedPublicIds = []; 
 
   try {
-    // Validate MongoDB ObjectId format
+    // 1. Validate MongoDB ObjectId format
     if (!id.match(/^[0-9a-fA-F]{24}$/)) {
       logger.warn("Invalid hostel ID format for update", { id, userId });
       throw new ApiError(400, "Invalid hostel ID format.");
@@ -417,6 +422,7 @@ export const updateHostel = asyncHandler(async (req, res) => {
 
     logger.debug("Updating hostel", { id, userId });
 
+    // 2. Find hostel and verify ownership
     const hostel = await Hostel.findOne({
       _id: id,
       owner: userId,
@@ -427,7 +433,7 @@ export const updateHostel = asyncHandler(async (req, res) => {
       throw new ApiError(404, "Hostel not found or you don't have access to it.");
     }
 
-    // Parse and validate update data
+    // 3. Parse and validate update data
     const parsed = parseHostelBody(req);
     const updateData = validateBody(updateHostelSchema, parsed);
     const { coordinates, ...fields } = updateData;
@@ -437,70 +443,38 @@ export const updateHostel = asyncHandler(async (req, res) => {
       photosAdded: req.files?.length || 0,
     };
 
-    // Handle photo uploads in parallel
+    // 4. Handle additional photo uploads (Cloudinary)
     if (req.files && req.files.length > 0) {
       const existingCount = hostel.photos.length;
       const newCount = req.files.length;
       
       if (existingCount + newCount > 20) {
-        logger.warn("Photo limit exceeded", { id, userId, existing: existingCount, new: newCount });
         throw new ApiError(400, `Cannot add ${newCount} photos. Current: ${existingCount}, max allowed: 20`);
       }
 
-      logger.info("Starting parallel upload for additional hostel photos", { userId, id, fileCount: newCount });
-
-      // Upload all files in parallel with error handling
       const uploadResult = await uploadMultipleFiles(req.files, {
         folder: "vidyamarg/hostels",
         allowedFormats: ["jpg", "jpeg", "png", "webp"],
-        concurrency: 3, // 3 concurrent uploads
-        maxRetries: 3,
       });
 
-      // Track successful uploads for cleanup on failure
       uploadedPublicIds.push(...uploadResult.successful.map(u => u.publicId));
 
-      // If some uploads failed, provide feedback
       if (uploadResult.failed.length > 0) {
-        const failureMessage = uploadResult.failed
-          .map(f => `"${f.filename}": ${f.error}`)
-          .join("; ");
-        
-        logger.warn("Some files failed to upload during hostel update", { 
-          userId, 
-          id,
-          failedCount: uploadResult.failed.length,
-          successCount: uploadResult.successful.length 
-        });
-
-        // Cleanup uploaded files if partial upload failed
         if (uploadResult.successful.length > 0) {
           await cleanupUploadedFiles(uploadedPublicIds);
-          uploadedPublicIds.length = 0;
         }
-
-        throw new ApiError(
-          400, 
-          `Failed to upload ${uploadResult.failed.length}/${req.files.length} files. ${failureMessage}`
-        );
+        throw new ApiError(400, `Failed to upload ${uploadResult.failed.length} files.`);
       }
 
-      // Add successful uploads to hostel photos
       uploadResult.successful.forEach(upload => {
         hostel.photos.push({
           url: upload.url,
           publicId: upload.publicId,
         });
       });
-
-      logger.info("All additional hostel photos uploaded successfully", { 
-        userId, 
-        id,
-        photoCount: uploadResult.successful.length 
-      });
     }
 
-    // Update location if provided
+    // 5. Update GPS location if coordinates provided
     if (coordinates && coordinates.lng !== undefined && coordinates.lat !== undefined) {
       hostel.location = {
         type: "Point",
@@ -509,20 +483,40 @@ export const updateHostel = asyncHandler(async (req, res) => {
       updateLog.locationUpdated = true;
     }
 
-    // Update nested objects
+    // 6. UPDATE NESTED OBJECTS (Comprehensive List)
     const nestedObjects = [
-      "address", "rent", "meal_plan", "laundry", "washroom_details", 
-      "security", "rules", "nearby_distances", "building_details", "legal_docs"
+      "address", 
+      "rent", 
+      "meal_plans", 
+      "laundry", 
+      "washroom_details", // Includes total_washrooms & ratio
+      "security", 
+      "rules", 
+      "nearby_distances", 
+      "building_details", // Includes age, flooring, floors
+      "legal_docs",
+      "warden" // New Warden object (name, age, gender, contact)
     ];
 
     nestedObjects.forEach((obj) => {
       if (fields[obj] !== undefined) {
-        hostel[obj] = { ...hostel[obj], ...fields[obj] };
+        // Spread to maintain existing fields while updating new ones
+        hostel[obj] = { ...hostel[obj].toObject(), ...fields[obj] };
       }
     });
 
-    // Update basic fields and arrays
-    const otherFields = ["name", "hostel_type", "description", "is_open", "in_room_amenities", "common_amenities", "recreation", "search_tags"];
+    // 7. UPDATE BASIC FIELDS & ARRAYS
+    const otherFields = [
+      "name", 
+      "hostel_type", 
+      "description", 
+      "is_open", 
+      "in_room_amenities", 
+      "common_amenities", 
+      "recreation", 
+      "total_hostel_beds", // Total bed inventory
+      "notice_period_days"
+    ];
     
     otherFields.forEach((field) => {
       if (fields[field] !== undefined && fields[field] !== null) {
@@ -530,49 +524,40 @@ export const updateHostel = asyncHandler(async (req, res) => {
       }
     });
 
-    // Update masked name if name changes
+    // 8. Handle Room Array specifically (Inventory Update)
+    if (fields.rooms && Array.isArray(fields.rooms)) {
+      hostel.rooms = fields.rooms; // Replaces existing room sharing inventory
+    }
+
+    // 9. Masked name and Search Tags Update
     if (fields.name) {
       hostel.masked_name = maskName(fields.name);
     }
-
-    // Regenerate search tags
     hostel.search_tags = generateSearchTags(hostel);
     hostel.updatedAt = new Date();
 
+    // 10. Final Save
     await hostel.save();
 
     const duration = Date.now() - startTime;
-    logger.info("Hostel updated successfully", { 
-      id, 
-      userId, 
-      duration: `${duration}ms`,
-      ...updateLog 
-    });
+    logger.info("Hostel updated successfully with new fields", { id, duration: `${duration}ms` });
 
     res.status(200).json(
-      new ApiResponse(200, "Hostel updated successfully.", {
+      new ApiResponse(200, "Hostel details updated successfully.", {
         hostel: {
           _id: hostel._id,
           name: hostel.name,
           updated_at: hostel.updatedAt,
-        },
-        meta: {
-          fields_updated: updateLog.fieldsUpdated.length,
-          photos_added: updateLog.photosAdded,
-          response_time: `${duration}ms`,
         }
       })
     );
   } catch (error) {
-    // Cleanup uploaded files on error
     if (uploadedPublicIds.length > 0) {
-      logger.warn("Cleaning up uploaded files due to error", { userId, id, count: uploadedPublicIds.length });
       await cleanupUploadedFiles(uploadedPublicIds);
     }
-
     if (!(error instanceof ApiError)) {
-      logger.error("Unexpected error in updateHostel", { id, userId, error: error.message, stack: error.stack });
-      throw new ApiError(500, "Failed to update hostel. Please try again.");
+      logger.error("Error in updateHostel", { error: error.message });
+      throw new ApiError(500, "An error occurred while updating the hostel.");
     }
     throw error;
   }
