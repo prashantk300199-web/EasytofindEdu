@@ -30,7 +30,7 @@ import {
   getSubAreasByArea,
   enrollStudentInBatch
 } from '../controllers/institute.controller.js';
-import { authenticateOwner, authenticateAdmin, authenticateInstituteOwner  } from '../middlewares/auth.js';
+import { authenticateAdmin, authenticateInstituteOwner } from '../middlewares/auth.js';
 import validate from '../middlewares/validate.js';
 import { upload, debugUpload } from '../middlewares/uploadInstiture.js';
 import {
@@ -45,139 +45,122 @@ import ApiResponse from '../utils/ApiResponse.js';
 
 const router = express.Router();
 
-console.log('🔧 Setting up public routes');
-
-router.get('/cities', (req, res, next) => {
-  console.log('📍 /institutes/cities endpoint HIT!');
-  console.log('📍 Request headers:', req.headers);
-  console.log('📍 Request params:', req.params);
-  console.log('📍 Request query:', req.query);
-  return getCities(req, res, next);
-});
-
-router.get('/areas/:cityId', (req, res, next) => {
-  console.log('📍 /institutes/areas/:cityId endpoint HIT!');
-  console.log('📍 City ID:', req.params.cityId);
-  return getAreasByCity(req, res, next);
-});
-
-router.get('/subareas/:areaId', (req, res, next) => {
-  console.log('📍 /institutes/subareas/:areaId endpoint HIT!');
-  console.log('📍 Area ID:', req.params.areaId);
-  return getSubAreasByArea(req, res, next);
-});
-
-router.get('/search', (req, res, next) => {
-  console.log('📍 /institutes/search endpoint HIT!');
-  console.log('📍 Search query:', req.query);
-  return getInstitutes(req, res, next);
-});
-
-console.log('✅ Public routes setup completed');
+// ============================================================
+// IMPORTANT: Static/specific routes MUST come before /:id
+// otherwise Express matches "courses", "batches" etc. as :id
+// ============================================================
 
 
-
-router.route('/institutes')
-  .post(
-    authenticateInstituteOwner,
-    upload.fields([
-      { name: 'logo', maxCount: 1 },
-      { name: 'coverImage', maxCount: 1 }
-    ]),
-    validate(createInstituteValidator), 
-    createInstitute
-  )
-  .get(getInstitutes);  
-router.route('/institutes/:id')
-  .get(getInstituteById)
-  .put(
-    authenticateInstituteOwner, 
-    upload.fields([
-      { name: 'logo', maxCount: 1 },
-      { name: 'coverImage', maxCount: 1 }
-    ]),
-    updateInstitute
-  )
-  .delete(authenticateInstituteOwner, deleteInstitute);
-
-router.route('/courses')
-  .post(
-    authenticateInstituteOwner,
-    debugUpload, 
-    upload.single('image'), 
-    debugUpload, 
-    (req, res, next) => {
-      console.log('📍 AFTER MULTER MIDDLEWARE');
-      console.log('📍 req.files after multer:', req.files);
-      console.log('📍 req.body after multer:', req.body);
-      next();
-    },
-    validate(createCourseValidator), 
-    createCourse
-  )
-  .get(getCourses);
+// -----------------------------------------------------------
+// LOCATION ROUTES (Public)
+// GET /api/v1/institutes/cities
+// GET /api/v1/institutes/areas/:cityId
+// GET /api/v1/institutes/subareas/:areaId
+// -----------------------------------------------------------
+router.get('/cities', getCities);
+router.get('/areas/:cityId', getAreasByCity);
+router.get('/subareas/:areaId', getSubAreasByArea);
 
 
-router.route('/courses/:id')
-  .get(getCourseById)
-  .put(
-    authenticateInstituteOwner, 
-    upload.single('image'),
-    validate(createCourseValidator), 
-    updateCourse
-  )
-  .delete(authenticateInstituteOwner, deleteCourse);
+// -----------------------------------------------------------
+// SEARCH (Public)
+// GET /api/v1/institutes/search?city=X&area=Y&course=Z&mode=online&page=1&limit=10
+// -----------------------------------------------------------
+// router.get('/search', getInstitutes);
 
-// Batch Routes
-router.route('/batches')
-  .post(authenticateInstituteOwner, validate(createBatchValidator), createBatch)
-  .get(getBatches);
 
-router.route('/batches/:id')
-  .get(getBatchById)
-  .put(authenticateInstituteOwner, updateBatch)
-  .delete(authenticateInstituteOwner, deleteBatch);
+// -----------------------------------------------------------
+// COURSE ROUTES  (must be before /:id)
+// -----------------------------------------------------------
 
+// Public
+router.get('/courses', getCourses);
+router.get('/courses/:id', getCourseById);
+
+// Protected
+router.post(
+  '/courses',
+  authenticateInstituteOwner,
+  debugUpload,
+  upload.single('image'),
+  debugUpload,
+  validate(createCourseValidator),
+  createCourse
+);
+router.put(
+  '/courses/:id',
+  authenticateInstituteOwner,
+  upload.single('image'),
+  validate(createCourseValidator),
+  updateCourse
+);
+router.delete('/courses/:id', authenticateInstituteOwner, deleteCourse);
+
+
+// -----------------------------------------------------------
+// BATCH ROUTES  (must be before /:id)
+// -----------------------------------------------------------
+
+// Public
+router.get('/batches', getBatches);
+router.get('/batches/:id', getBatchById);
+
+// Protected
+router.post('/batches', authenticateInstituteOwner, validate(createBatchValidator), createBatch);
+router.put('/batches/:id', authenticateInstituteOwner, updateBatch);
+router.delete('/batches/:id', authenticateInstituteOwner, deleteBatch);
 router.post('/batches/:batchId/enroll', authenticateInstituteOwner, enrollStudentInBatch);
 
-// Fee Structure Routes
-router.route('/fee-structures')
-  .post(authenticateInstituteOwner, validate(createFeeStructureValidator), createFeeStructure)
-  .get(getFeeStructures);
 
-router.route('/fee-structures/:id')
-  .get(getFeeStructureById)
-  .put(authenticateInstituteOwner, updateFeeStructure)
-  .delete(authenticateInstituteOwner, deleteFeeStructure);
+// -----------------------------------------------------------
+// FEE STRUCTURE ROUTES  (must be before /:id)
+// -----------------------------------------------------------
 
-/// Result Routes - Simplified
-router.route('/results')
-  .post(
-    authenticateInstituteOwner, 
-    upload.fields([
-      { name: 'rankersListImage', maxCount: 1 },
-      { name: 'certificatesImage', maxCount: 1 }
-    ]),
-    validate(createResultValidator), 
-    createResult
-  )
-  .get(getResults);
+// Public
+router.get('/fee-structures', getFeeStructures);
+router.get('/fee-structures/:id', getFeeStructureById);
 
-router.route('/results/:id')
-  .get(getResultById)
-  .put(
-    authenticateInstituteOwner, 
-    upload.fields([
-      { name: 'rankersListImage', maxCount: 1 },
-      { name: 'certificatesImage', maxCount: 1 }
-    ]),
-    updateResult
-  )
-  .delete(authenticateInstituteOwner, deleteResult);
+// Protected
+router.post('/fee-structures', authenticateInstituteOwner, validate(createFeeStructureValidator), createFeeStructure);
+router.put('/fee-structures/:id', authenticateInstituteOwner, updateFeeStructure);
+router.delete('/fee-structures/:id', authenticateInstituteOwner, deleteFeeStructure);
 
 
-// Admin Routes
-router.put('/institutes/:id/approve', authenticateAdmin, async (req, res) => {
+// -----------------------------------------------------------
+// RESULT ROUTES  (must be before /:id)
+// -----------------------------------------------------------
+
+// Public
+router.get('/results', getResults);
+router.get('/results/:id', getResultById);
+
+// Protected
+router.post(
+  '/results',
+  authenticateInstituteOwner,
+  upload.fields([
+    { name: 'rankersListImage', maxCount: 1 },
+    { name: 'certificatesImage', maxCount: 1 }
+  ]),
+  validate(createResultValidator),
+  createResult
+);
+router.put(
+  '/results/:id',
+  authenticateInstituteOwner,
+  upload.fields([
+    { name: 'rankersListImage', maxCount: 1 },
+    { name: 'certificatesImage', maxCount: 1 }
+  ]),
+  updateResult
+);
+router.delete('/results/:id', authenticateInstituteOwner, deleteResult);
+
+
+// -----------------------------------------------------------
+// ADMIN ROUTES  (must be before /:id)
+// -----------------------------------------------------------
+router.put('/admin/:id/approve', authenticateAdmin, async (req, res) => {
   try {
     const institute = await Institute.findByIdAndUpdate(
       req.params.id,
@@ -192,5 +175,35 @@ router.put('/institutes/:id/approve', authenticateAdmin, async (req, res) => {
     return res.status(500).json(new ApiResponse(500, 'Internal server error'));
   }
 });
+
+
+
+router.get('/', getInstitutes);
+
+router.post(
+  '/',
+  authenticateInstituteOwner,
+  upload.fields([
+    { name: 'logo', maxCount: 1 },
+    { name: 'coverImage', maxCount: 1 }
+  ]),
+  validate(createInstituteValidator),
+  createInstitute
+);
+
+router.get('/:id', getInstituteById);
+
+
+router.put(
+  '/:id',
+  authenticateInstituteOwner,
+  upload.fields([
+    { name: 'logo', maxCount: 1 },
+    { name: 'coverImage', maxCount: 1 }
+  ]),
+  updateInstitute
+);
+router.delete('/:id', authenticateInstituteOwner, deleteInstitute);
+
 
 export default router;

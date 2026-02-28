@@ -17,8 +17,11 @@ import adminOwnerRoutes from "./routes/admin.owner.routes.js";
 import adminHostelRoutes from "./routes/admin.hostel.routes.js";
 import instituteRoutes from './routes/institute.routes.js';
 import instituteAuthRoutes from './routes/institute.auth.routes.js';
+import studentAuthRoutes from "./routes/student.routes.js";
+import enquiryRoutes from "./routes/enquiry.routes.js";
 import publicRoutes from "./routes/public.routes.js";
 import ApiResponse from "./utils/ApiResponse.js";
+
 
 const app = express();
 
@@ -95,6 +98,8 @@ app.use("/api/v1/admin/owners", adminOwnerRoutes);
 app.use("/api/v1/admin/hostels", adminHostelRoutes);
 app.use("/api/v1/institutes", instituteRoutes);
 app.use("/api/v1/institute/auth", instituteAuthRoutes);
+app.use("/api/v1/student/auth", studentAuthRoutes);
+app.use("/api/v1/enquiries", enquiryRoutes);
 app.use("/api/v1/public", publicRoutes);
 
 // 404 handler
