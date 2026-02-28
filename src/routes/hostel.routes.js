@@ -25,8 +25,14 @@ router.use(authenticateOwner);
  * @description Create a new hostel listing with photos
  * Rate limited: 10 requests per hour
  */
-router.post("/", createRateLimiter("hostel_create"), uploadHostelPhotos, validateUploadedFiles, parseFormData, createHostel);
-
+router.post(
+  "/",
+  createRateLimiter("hostel_create"),
+  uploadHostelPhotos,
+  validateUploadedFiles,
+  parseFormData,
+  createHostel  
+);
 /**
  * @route GET /api/v1/hostels
  * @access Private - Owner only

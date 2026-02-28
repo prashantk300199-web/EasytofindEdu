@@ -41,3 +41,9 @@ export const USER_STATUS = {
   VERIFIED: "verified",
   BLOCKED: "blocked",
 };
+
+export const INSTITUTE_OWNER_STATUS = {
+  PENDING: "pending",
+  VERIFIED: "verified",
+  BLOCKED: "blocked"
+};

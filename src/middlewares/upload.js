@@ -211,7 +211,7 @@ export const validateUploadedFiles = (req, res, next) => {
     const { valid, errors } = validateFiles(req.files, {
       allowedMimes: allowedHostelMimes,
       maxFileSize: 10 * 1024 * 1024, // 10MB
-      minFileSize: 10 * 1024, // 10KB minimum
+      minFileSize: 1 * 1024, // 10KB minimum
       maxFiles: 20,
     });
 

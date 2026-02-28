@@ -15,6 +15,8 @@ import adminAuthRoutes from "./routes/admin.auth.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import adminOwnerRoutes from "./routes/admin.owner.routes.js";
 import adminHostelRoutes from "./routes/admin.hostel.routes.js";
+import instituteRoutes from './routes/institute.routes.js';
+import instituteAuthRoutes from './routes/institute.auth.routes.js';
 import publicRoutes from "./routes/public.routes.js";
 import ApiResponse from "./utils/ApiResponse.js";
 
@@ -86,11 +88,13 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/owner", ownerRoutes);
 app.use("/api/v1/hostels", hostelRoutes);
 app.use("/api/v1/bookings", bookingRoutes);
-app.use("/api/v1/reviews", reviewRoutes);
+app.use("/api/v1/reviews", reviewRoutes); 
 app.use("/api/v1/admin/auth", adminAuthRoutes);
 app.use("/api/v1/admin/members", adminRoutes);
 app.use("/api/v1/admin/owners", adminOwnerRoutes);
 app.use("/api/v1/admin/hostels", adminHostelRoutes);
+app.use("/api/v1/institutes", instituteRoutes);
+app.use("/api/v1/institute/auth", instituteAuthRoutes);
 app.use("/api/v1/public", publicRoutes);
 
 // 404 handler

@@ -2,10 +2,10 @@ import jwt from "jsonwebtoken";
 import env from "../config/env.js";
 import User from "../models/User.js";
 import Admin from "../models/Admin.js";
+import InstituteOwner from "../models/InstituteOwner.js"; // Add this import
 import ApiError from "../utils/ApiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
-
-// Logger utility
+  
 const logger = {
   info: (msg, data = {}) => console.log(`[INFO] ${new Date().toISOString()} - ${msg}`, data),
   error: (msg, error = {}) => console.error(`[ERROR] ${new Date().toISOString()} - ${msg}`, error),
@@ -146,6 +146,78 @@ export const authenticateAdmin = asyncHandler(async (req, res, next) => {
     }
     
     logger.error("Admin token verification failed", { error: error.message });
+    
+    if (error.name === 'TokenExpiredError') {
+      throw new ApiError(401, "Token has expired. Please login again.");
+    }
+    if (error.name === 'JsonWebTokenError') {
+      throw new ApiError(401, "Invalid token. Please login again.");
+    }
+    
+    throw new ApiError(401, "Authentication failed. Please login again.");
+  }
+});
+
+// Add Institute Owner Authentication
+export const authenticateInstituteOwner = asyncHandler(async (req, res, next) => {
+  // Extract token from multiple sources
+  let token = null;
+  
+  // 1. Check Authorization header (Bearer token)
+  if (req.headers.authorization) {
+    const authHeader = req.headers.authorization;
+    if (authHeader.startsWith('Bearer ')) {
+      token = authHeader.slice(7); // Remove 'Bearer ' prefix
+    } else {
+      token = authHeader; // Handle case where token is sent directly
+    }
+  }
+  
+  // 2. Check cookies if header not found
+  if (!token && req.cookies?.instituteOwnerToken) {
+    token = req.cookies.instituteOwnerToken;
+  }
+
+  if (!token) {
+    logger.warn("Institute Owner authentication failed: No token provided", { 
+      endpoint: req.originalUrl,
+      method: req.method,
+    });
+    throw new ApiError(401, "Access denied. No token provided.");
+  }
+
+  try {
+    const decoded = jwt.verify(token, env.jwt.secret);
+
+    if (decoded.role !== "institute_owner") {
+      logger.warn("Institute Owner authentication failed: Invalid role", { 
+        userId: decoded.id,
+        role: decoded.role,
+      });
+      throw new ApiError(403, "Access denied. Institute owner role required.");
+    }
+
+    const owner = await InstituteOwner.findById(decoded.id);
+
+    if (!owner) {
+      logger.warn("Institute Owner authentication failed: Owner not found", { userId: decoded.id });
+      throw new ApiError(401, "Owner not found.");
+    }
+
+    if (owner.status === "blocked") {
+      logger.warn("Institute Owner authentication failed: Account blocked", { userId: decoded.id });
+      throw new ApiError(403, "Your account has been blocked.");
+    }
+
+    req.owner = owner;
+    logger.debug("Institute Owner authenticated successfully", { ownerId: owner._id });
+    next();
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    
+    logger.error("Institute Owner token verification failed", { error: error.message });
     
     if (error.name === 'TokenExpiredError') {
       throw new ApiError(401, "Token has expired. Please login again.");

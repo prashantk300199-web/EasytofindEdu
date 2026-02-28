@@ -7,6 +7,13 @@
 export const API_VERSION = "1.0.0";
 export const API_PREFIX = "/api/v1";
 
+export const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict",
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+};
+
 // HTTP Status Codes
 export const HTTP_STATUS = {
   OK: 200,

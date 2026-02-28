@@ -10,6 +10,8 @@ import { createHostelSchema, updateHostelSchema } from "../validators/hostel.val
 import { deleteMultipleImages } from "../services/cloudinary.service.js";
 import { uploadMultipleFiles, cleanupUploadedFiles } from "../services/upload.service.js";
 
+
+
 // Logger utility
 const logger = {
   info: (msg, data = {}) => console.log(`[INFO] ${new Date().toISOString()} - ${msg}`, data),
@@ -25,19 +27,19 @@ const logger = {
  * @returns {Object} Parsed hostel data
  * @throws {ApiError} If JSON parsing fails
  */
-const parseHostelBody = (req) => {
-  if (req.body.data) {
-    try {
-      const parsed = typeof req.body.data === "string" ? JSON.parse(req.body.data) : req.body.data;
-      logger.debug("Parsed hostel body successfully");
-      return parsed;
-    } catch (e) {
-      logger.error("Failed to parse hostel body", { error: e.message });
-      throw new ApiError(400, "Invalid JSON in data field. Please ensure the data is valid JSON format.");
-    }
-  }
-  return req.body;
-};
+// const parseHostelBody = (req) => {
+//   if (req.body.data) {
+//     try {
+//       const parsed = typeof req.body.data === "string" ? JSON.parse(req.body.data) : req.body.data;
+//       logger.debug("Parsed hostel body successfully");
+//       return parsed;
+//     } catch (e) {
+//       logger.error("Failed to parse hostel body", { error: e.message });
+//       throw new ApiError(400, "Invalid JSON in data field. Please ensure the data is valid JSON format.");
+//     }
+//   }
+//   return req.body;
+// };
 
 /**
  * Validate request body against Joi schema
@@ -48,10 +50,11 @@ const parseHostelBody = (req) => {
  * @throws {ApiError} If validation fails
  */
 const validateBody = (schema, data) => {
-  const { error, value } = schema.validate(data, {
-    abortEarly: false,
-    stripUnknown: true,
-  });
+const { error, value } = schema.validate(data, {
+  abortEarly: false,
+  stripUnknown: true,
+  convert: true,
+});
 
   if (error) {
     const errors = error.details.map((detail) => ({
@@ -85,7 +88,13 @@ const validateBody = (schema, data) => {
  *   "photos": [file1, file2, ...]
  * }
  */
+
+
+
 export const createHostel = asyncHandler(async (req, res) => {
+
+  console.log("RAW BODY:", req.body);
+console.log("DATA FIELD:", req.body?.data);
   const startTime = Date.now();
   const userId = req.user._id;
   const uploadedPublicIds = []; // Track uploaded files for cleanup on failure
@@ -105,12 +114,28 @@ export const createHostel = asyncHandler(async (req, res) => {
       throw new ApiError(403, "Your account has been blocked. Please contact support.");
     }
 
-    // Parse request body
-    const parsed = parseHostelBody(req);
-    
-    // Validate against schema
-    const hostelData = validateBody(createHostelSchema, parsed);
+// 🔥 Parse multipart JSON (VERY IMPORTANT)
+let parsedBody = req.body;
 
+if (req.body.data) {
+  try {
+    parsedBody =
+      typeof req.body.data === "string"
+        ? JSON.parse(req.body.data)
+        : req.body.data;
+
+    logger.debug("Parsed hostel body successfully");
+  } catch (e) {
+    logger.error("Failed to parse hostel body", { error: e.message });
+    throw new ApiError(
+      400,
+      "Invalid JSON in data field. Please ensure the data is valid JSON format."
+    );
+  }
+}
+
+// 🔥 Now validate parsed body
+const hostelData = validateBody(createHostelSchema, parsedBody);
     // Validate and upload photos in parallel
     let photos = [];
     if (req.files && req.files.length > 0) {
