@@ -90,6 +90,9 @@ app.get("/api/v1/health", (req, res) => {
 
 // API Routes (Protected)
 app.use("/api/v1/auth", authRoutes);
+// NOTE: /api/v1/owner/institutes must be registered BEFORE /api/v1/owner
+// otherwise the hostel-owner authenticateOwner middleware runs first on all /owner/* paths
+app.use("/api/v1/owner/institutes", ownerInstituteRoutes);
 app.use("/api/v1/owner", ownerRoutes);
 app.use("/api/v1/hostels", hostelRoutes);
 app.use("/api/v1/bookings", bookingRoutes);
@@ -98,12 +101,10 @@ app.use("/api/v1/admin/auth", adminAuthRoutes);
 app.use("/api/v1/admin/members", adminRoutes);
 app.use("/api/v1/admin/owners", adminOwnerRoutes);
 app.use("/api/v1/admin/hostels", adminHostelRoutes);
+// NOTE: /api/v1/admin/institutes must be registered BEFORE /api/v1/admin/* generic routes
+app.use("/api/v1/admin/institutes", adminInstituteRoutes);
 app.use("/api/v1/institutes", instituteRoutes);
 app.use("/api/v1/institute/auth", instituteAuthRoutes);
-// Owner-scoped institute management (dashboard)
-app.use("/api/v1/owner/institutes", ownerInstituteRoutes);
-// Admin institute management
-app.use("/api/v1/admin/institutes", adminInstituteRoutes);
 app.use("/api/v1/student/auth", studentAuthRoutes);
 app.use("/api/v1/enquiries", enquiryRoutes);
 app.use("/api/v1/public", publicRoutes);
