@@ -705,3 +705,524 @@ export const enrollStudentInBatchService = asyncHandler(async (batchId) => {
   
   return batch;
 });
+
+
+// ============================================================
+// OWNER-SCOPED SERVICES
+// ============================================================
+
+/**
+ * Get all institutes that belong to a specific owner.
+ */
+export const getMyInstitutesService = async (ownerId, filters = {}, page = 1, limit = 10, sortBy = '-createdAt') => {
+  const query = { createdBy: ownerId, ...buildFilterQuery(filters) };
+  const institutes = await paginate(Institute.find(query).sort(sortBy), page, limit)
+    .populate(['location.city', 'location.area', 'location.subarea', 'courses']);
+  const total = await Institute.countDocuments(query);
+  return {
+    data: institutes,
+    pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / limit) }
+  };
+};
+
+/**
+ * Verify that a given owner owns the given institute.
+ * Throws 403 if not.
+ */
+export const verifyInstituteOwnership = async (instituteId, ownerId) => {
+  const institute = await Institute.findOne({ _id: instituteId, createdBy: ownerId });
+  if (!institute) throw new ApiError(403, 'You do not have permission to access this institute');
+  return institute;
+};
+
+/**
+ * Verify that a resource (batch/fee-structure/result) belongs to an owner via its institute.
+ */
+export const verifyResourceOwnership = async (Model, resourceId, ownerId) => {
+  const myInstituteIds = await Institute.find({ createdBy: ownerId }).distinct('_id');
+  const resource = await Model.findOne({ _id: resourceId, institute: { $in: myInstituteIds } });
+  if (!resource) throw new ApiError(403, 'You do not have permission to access this resource');
+  return resource;
+};
+
+/**
+ * Get courses that belong to an owner (by createdBy or via institute).
+ */
+export const getMyCoursesService = async (ownerId, page = 1, limit = 10, filters = {}) => {
+  const myInstituteIds = await Institute.find({ createdBy: ownerId }).distinct('_id');
+  const query = {
+    $or: [
+      { createdBy: ownerId },
+      { institute: { $in: myInstituteIds } }
+    ],
+    ...filters
+  };
+  const courses = await paginate(Course.find(query).populate('institute'), page, limit);
+  const total = await Course.countDocuments(query);
+  return {
+    data: courses,
+    pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / limit) }
+  };
+};
+
+/**
+ * Create a course linked to a specific institute (with ownership check).
+ */
+export const createOwnerCourseService = async (data, ownerId, files) => {
+  // Verify the institute belongs to this owner
+  await verifyInstituteOwnership(data.institute, ownerId);
+
+  if (files?.image) {
+    data.image = extractImageData(files.image[0]);
+  }
+  data.createdBy = ownerId;
+
+  const course = await Course.create(data);
+  // Keep Institute.courses array in sync
+  await Institute.findByIdAndUpdate(data.institute, { $addToSet: { courses: course._id } });
+  return course;
+};
+
+/**
+ * Update a course with ownership check.
+ */
+export const updateOwnerCourseService = async (courseId, data, ownerId, files) => {
+  const myInstituteIds = await Institute.find({ createdBy: ownerId }).distinct('_id');
+  const course = await Course.findOne({
+    _id: courseId,
+    $or: [{ createdBy: ownerId }, { institute: { $in: myInstituteIds } }]
+  });
+  if (!course) throw new ApiError(403, 'You do not have permission to update this course');
+
+  if (files?.image) {
+    data.image = extractImageData(files.image[0]);
+  }
+
+  return Course.findByIdAndUpdate(courseId, data, { new: true, runValidators: true });
+};
+
+/**
+ * Delete a course with ownership check.
+ */
+export const deleteOwnerCourseService = async (courseId, ownerId) => {
+  const myInstituteIds = await Institute.find({ createdBy: ownerId }).distinct('_id');
+  const course = await Course.findOne({
+    _id: courseId,
+    $or: [{ createdBy: ownerId }, { institute: { $in: myInstituteIds } }]
+  });
+  if (!course) throw new ApiError(403, 'You do not have permission to delete this course');
+
+  // Remove from institute's courses array
+  if (course.institute) {
+    await Institute.findByIdAndUpdate(course.institute, { $pull: { courses: course._id } });
+  }
+  return Course.findByIdAndDelete(courseId);
+};
+
+/**
+ * Get batches that belong to an owner's institutes.
+ */
+export const getMyBatchesService = async (ownerId, page = 1, limit = 10, filters = {}) => {
+  const myInstituteIds = await Institute.find({ createdBy: ownerId }).distinct('_id');
+  const query = { institute: { $in: myInstituteIds }, ...filters };
+  const batches = await paginate(Batch.find(query).populate(['institute', 'course']), page, limit);
+  const total = await Batch.countDocuments(query);
+  return {
+    data: batches,
+    pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / limit) }
+  };
+};
+
+/**
+ * Create batch with ownership check on institute.
+ */
+export const createOwnerBatchService = async (data, ownerId) => {
+  await verifyInstituteOwnership(data.institute, ownerId);
+  return Batch.create(data);
+};
+
+/**
+ * Update batch with ownership check.
+ */
+export const updateOwnerBatchService = async (batchId, data, ownerId) => {
+  await verifyResourceOwnership(Batch, batchId, ownerId);
+  const batch = await Batch.findByIdAndUpdate(batchId, data, { new: true, runValidators: true });
+  if (!batch) throw new ApiError(404, 'Batch not found');
+  return batch;
+};
+
+/**
+ * Delete batch with ownership check.
+ */
+export const deleteOwnerBatchService = async (batchId, ownerId) => {
+  await verifyResourceOwnership(Batch, batchId, ownerId);
+  const batch = await Batch.findByIdAndDelete(batchId);
+  if (!batch) throw new ApiError(404, 'Batch not found');
+  return batch;
+};
+
+/**
+ * Get fee structures that belong to an owner's institutes.
+ */
+export const getMyFeeStructuresService = async (ownerId, page = 1, limit = 10, filters = {}) => {
+  const myInstituteIds = await Institute.find({ createdBy: ownerId }).distinct('_id');
+  const query = { institute: { $in: myInstituteIds }, ...filters };
+  const feeStructures = await paginate(FeeStructure.find(query).populate(['institute', 'course']), page, limit);
+  const total = await FeeStructure.countDocuments(query);
+  return {
+    data: feeStructures,
+    pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / limit) }
+  };
+};
+
+/**
+ * Create fee structure with ownership check.
+ */
+export const createOwnerFeeStructureService = async (data, ownerId) => {
+  await verifyInstituteOwnership(data.institute, ownerId);
+  return FeeStructure.create(data);
+};
+
+/**
+ * Update fee structure with ownership check.
+ */
+export const updateOwnerFeeStructureService = async (id, data, ownerId) => {
+  await verifyResourceOwnership(FeeStructure, id, ownerId);
+  const fs = await FeeStructure.findByIdAndUpdate(id, data, { new: true, runValidators: true });
+  if (!fs) throw new ApiError(404, 'Fee structure not found');
+  return fs;
+};
+
+/**
+ * Delete fee structure with ownership check.
+ */
+export const deleteOwnerFeeStructureService = async (id, ownerId) => {
+  await verifyResourceOwnership(FeeStructure, id, ownerId);
+  const fs = await FeeStructure.findByIdAndDelete(id);
+  if (!fs) throw new ApiError(404, 'Fee structure not found');
+  return fs;
+};
+
+/**
+ * Get results that belong to an owner's institutes.
+ */
+export const getMyResultsService = async (ownerId, page = 1, limit = 10, filters = {}) => {
+  const myInstituteIds = await Institute.find({ createdBy: ownerId }).distinct('_id');
+  const query = { institute: { $in: myInstituteIds }, ...filters };
+  const results = await paginate(Result.find(query).populate('institute'), page, limit);
+  const total = await Result.countDocuments(query);
+  return {
+    data: results,
+    pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / limit) }
+  };
+};
+
+/**
+ * Create result with ownership check.
+ */
+export const createOwnerResultService = async (data, ownerId, files) => {
+  await verifyInstituteOwnership(data.institute, ownerId);
+
+  if (files?.rankersListImage) {
+    data.rankersListImage = extractImageData(files.rankersListImage[0]);
+  }
+  if (files?.certificatesImage) {
+    data.certificatesImage = extractImageData(files.certificatesImage[0]);
+  }
+  return Result.create(data);
+};
+
+/**
+ * Update result with ownership check.
+ */
+export const updateOwnerResultService = async (id, data, ownerId, files) => {
+  await verifyResourceOwnership(Result, id, ownerId);
+
+  if (files?.rankersListImage) {
+    data.rankersListImage = extractImageData(files.rankersListImage[0]);
+  }
+  if (files?.certificatesImage) {
+    data.certificatesImage = extractImageData(files.certificatesImage[0]);
+  }
+  const result = await Result.findByIdAndUpdate(id, data, { new: true, runValidators: true });
+  if (!result) throw new ApiError(404, 'Result not found');
+  return result;
+};
+
+/**
+ * Delete result with ownership check.
+ */
+export const deleteOwnerResultService = async (id, ownerId) => {
+  await verifyResourceOwnership(Result, id, ownerId);
+  const result = await Result.findByIdAndDelete(id);
+  if (!result) throw new ApiError(404, 'Result not found');
+  return result;
+};
+
+/**
+ * Owner dashboard stats.
+ */
+export const getOwnerDashboardStatsService = async (ownerId) => {
+  const myInstituteIds = await Institute.find({ createdBy: ownerId }).distinct('_id');
+  const [totalInstitutes, approvedInstitutes, pendingInstitutes, totalCourses, totalBatches, totalFeeStructures, totalResults] = await Promise.all([
+    Institute.countDocuments({ createdBy: ownerId }),
+    Institute.countDocuments({ createdBy: ownerId, isApproved: true }),
+    Institute.countDocuments({ createdBy: ownerId, isApproved: false }),
+    Course.countDocuments({ $or: [{ createdBy: ownerId }, { institute: { $in: myInstituteIds } }] }),
+    Batch.countDocuments({ institute: { $in: myInstituteIds } }),
+    FeeStructure.countDocuments({ institute: { $in: myInstituteIds } }),
+    Result.countDocuments({ institute: { $in: myInstituteIds } })
+  ]);
+  return { totalInstitutes, approvedInstitutes, pendingInstitutes, totalCourses, totalBatches, totalFeeStructures, totalResults };
+};
+
+/**
+ * Owner: delete their own institute and cascade.
+ */
+export const deleteOwnerInstituteService = async (instituteId, ownerId) => {
+  await verifyInstituteOwnership(instituteId, ownerId);
+  const institute = await Institute.findByIdAndDelete(instituteId);
+  if (!institute) throw new ApiError(404, 'Institute not found');
+  // Cascade delete
+  await Promise.all([
+    Batch.deleteMany({ institute: instituteId }),
+    FeeStructure.deleteMany({ institute: instituteId }),
+    Result.deleteMany({ institute: instituteId }),
+    Course.deleteMany({ institute: instituteId })
+  ]);
+  return institute;
+};
+
+
+// ============================================================
+// ADMIN-SCOPED SERVICES
+// ============================================================
+
+/**
+ * Admin: approve an institute.
+ */
+export const approveInstituteService = async (id) => {
+  const institute = await Institute.findByIdAndUpdate(
+    id,
+    { isApproved: true, isActive: true, rejectionReason: null },
+    { new: true }
+  );
+  if (!institute) throw new ApiError(404, 'Institute not found');
+  return institute;
+};
+
+/**
+ * Admin: reject an institute.
+ */
+export const rejectInstituteService = async (id, reason) => {
+  const institute = await Institute.findByIdAndUpdate(
+    id,
+    { isApproved: false, isActive: false, rejectionReason: reason || 'Not specified' },
+    { new: true }
+  );
+  if (!institute) throw new ApiError(404, 'Institute not found');
+  return institute;
+};
+
+/**
+ * Admin: toggle institute active status.
+ */
+export const toggleInstituteActiveService = async (id) => {
+  const institute = await Institute.findById(id);
+  if (!institute) throw new ApiError(404, 'Institute not found');
+  institute.isActive = !institute.isActive;
+  await institute.save();
+  return institute;
+};
+
+/**
+ * Admin: get overall institute platform stats.
+ */
+export const getInstituteStatsService = async () => {
+  const [total, approved, pending, active, totalCourses, totalBatches] = await Promise.all([
+    Institute.countDocuments(),
+    Institute.countDocuments({ isApproved: true }),
+    Institute.countDocuments({ isApproved: false }),
+    Institute.countDocuments({ isActive: true }),
+    Course.countDocuments(),
+    Batch.countDocuments()
+  ]);
+  return { total, approved, pending, active, totalCourses, totalBatches };
+};
+
+/**
+ * Admin: hard delete institute + cascade all related.
+ */
+export const adminDeleteInstituteService = async (id) => {
+  const institute = await Institute.findByIdAndDelete(id);
+  if (!institute) throw new ApiError(404, 'Institute not found');
+  await Promise.all([
+    Batch.deleteMany({ institute: id }),
+    FeeStructure.deleteMany({ institute: id }),
+    Result.deleteMany({ institute: id }),
+    Course.deleteMany({ institute: id })
+  ]);
+  return institute;
+};
+
+/**
+ * Admin: create course (no ownership restriction, but links to institute).
+ */
+export const adminCreateCourseService = async (data, adminId, files) => {
+  if (files?.image) {
+    data.image = extractImageData(files.image[0]);
+  }
+  const course = await Course.create(data);
+  if (data.institute) {
+    await Institute.findByIdAndUpdate(data.institute, { $addToSet: { courses: course._id } });
+  }
+  return course;
+};
+
+/**
+ * Admin: create batch (no ownership restriction).
+ */
+export const adminCreateBatchService = async (data) => {
+  return Batch.create(data);
+};
+
+/**
+ * Admin: create fee structure (no ownership restriction).
+ */
+export const adminCreateFeeStructureService = async (data) => {
+  return FeeStructure.create(data);
+};
+
+/**
+ * Admin: create result (no ownership restriction).
+ */
+export const adminCreateResultService = async (data, files) => {
+  if (files?.rankersListImage) {
+    data.rankersListImage = extractImageData(files.rankersListImage[0]);
+  }
+  if (files?.certificatesImage) {
+    data.certificatesImage = extractImageData(files.certificatesImage[0]);
+  }
+  return Result.create(data);
+};
+
+/**
+ * Admin: get all institutes (with full filter support, no approval filter).
+ */
+export const adminGetInstitutesService = async (filters = {}, page = 1, limit = 10, sortBy = '-createdAt') => {
+  // Admin can filter by isApproved, isActive etc. from query params without restrictions
+  const query = {};
+  if (filters.isApproved !== undefined) query.isApproved = filters.isApproved === 'true';
+  if (filters.isActive !== undefined) query.isActive = filters.isActive === 'true';
+  if (filters.city) query['location.city'] = filters.city;
+  if (filters.area) query['location.area'] = filters.area;
+
+  const institutes = await paginate(
+    Institute.find(query).sort(sortBy).populate(['location.city', 'location.area', 'location.subarea', 'createdBy']),
+    page, limit
+  );
+  const total = await Institute.countDocuments(query);
+  return {
+    data: institutes,
+    pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / limit) }
+  };
+};
+
+
+// ============================================================
+// PUBLIC-SCOPED SERVICES (only approved + active institutes)
+// ============================================================
+
+/**
+ * Public search: approved + active institutes only.
+ */
+export const getPublicInstitutesService = async (filters = {}, page = 1, limit = 10, sortBy = '-createdAt') => {
+  const baseQuery = { isApproved: true, isActive: true };
+  const filterQuery = buildFilterQuery(filters);
+  const query = { ...baseQuery, ...filterQuery };
+
+  const institutes = await paginate(
+    Institute.find(query).sort(sortBy).populate(['location.city', 'location.area', 'location.subarea', 'courses']),
+    page, limit
+  );
+  const total = await Institute.countDocuments(query);
+  return {
+    data: institutes,
+    pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / limit) }
+  };
+};
+
+/**
+ * Public: get a single approved+active institute.
+ */
+export const getPublicInstituteByIdService = async (id) => {
+  const institute = await Institute.findOne({ _id: id, isApproved: true, isActive: true })
+    .populate(['location.city', 'location.area', 'location.subarea', 'courses']);
+  if (!institute) throw new ApiError(404, 'Institute not found or not available');
+  return institute;
+};
+
+/**
+ * Public: get batches of an approved institute.
+ */
+export const getPublicBatchesByInstituteService = async (instituteId, page = 1, limit = 10) => {
+  // First verify institute is public
+  const institute = await Institute.findOne({ _id: instituteId, isApproved: true, isActive: true });
+  if (!institute) throw new ApiError(404, 'Institute not found or not available');
+
+  const query = { institute: instituteId, isActive: true };
+  const batches = await paginate(Batch.find(query).populate('course'), page, limit);
+  const total = await Batch.countDocuments(query);
+  return {
+    data: batches,
+    pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / limit) }
+  };
+};
+
+/**
+ * Public: get fee structures of an approved institute.
+ */
+export const getPublicFeeStructuresByInstituteService = async (instituteId, page = 1, limit = 10) => {
+  const institute = await Institute.findOne({ _id: instituteId, isApproved: true, isActive: true });
+  if (!institute) throw new ApiError(404, 'Institute not found or not available');
+
+  const feeStructures = await paginate(
+    FeeStructure.find({ institute: instituteId }).populate('course'),
+    page, limit
+  );
+  const total = await FeeStructure.countDocuments({ institute: instituteId });
+  return {
+    data: feeStructures,
+    pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / limit) }
+  };
+};
+
+/**
+ * Public: get results of an approved institute.
+ */
+export const getPublicResultsByInstituteService = async (instituteId, page = 1, limit = 10) => {
+  const institute = await Institute.findOne({ _id: instituteId, isApproved: true, isActive: true });
+  if (!institute) throw new ApiError(404, 'Institute not found or not available');
+
+  const results = await paginate(Result.find({ institute: instituteId }), page, limit);
+  const total = await Result.countDocuments({ institute: instituteId });
+  return {
+    data: results,
+    pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / limit) }
+  };
+};
+
+/**
+ * Public: get courses of an approved institute.
+ */
+export const getPublicCoursesByInstituteService = async (instituteId, page = 1, limit = 10) => {
+  const institute = await Institute.findOne({ _id: instituteId, isApproved: true, isActive: true });
+  if (!institute) throw new ApiError(404, 'Institute not found or not available');
+
+  const courses = await paginate(Course.find({ institute: instituteId }), page, limit);
+  const total = await Course.countDocuments({ institute: instituteId });
+  return {
+    data: courses,
+    pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / limit) }
+  };
+};

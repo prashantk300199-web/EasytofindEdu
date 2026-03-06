@@ -10,7 +10,7 @@ const batchSchema = new mongoose.Schema({
   studentsPerBatch: Number,
   mode: { type: String, enum: ['Online', 'Offline'] },
   totalSeats: { type: Number, required: true },
-  seatsAvailable: { type: Number, required: false }, // CHANGE THIS TO FALSE
+  seatsAvailable: { type: Number, required: false }, 
   isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 
