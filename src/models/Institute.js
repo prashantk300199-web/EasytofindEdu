@@ -78,10 +78,11 @@ const instituteSchema = new mongoose.Schema({
   transparency: transparencySchema,
 
   courses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'InstituteOwner' },
 
   isActive: { type: Boolean, default: true },
-  isApproved: { type: Boolean, default: false }
+  isApproved: { type: Boolean, default: false },
+  rejectionReason: { type: String }
 }, { 
   timestamps: true,
   toJSON: { virtuals: true },

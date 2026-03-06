@@ -9,7 +9,7 @@ const resultSchema = new mongoose.Schema({
     publicId: String,
     url: String 
   },
-  achievementSummary: String, // Optional text summary
+  achievementSummary: String, 
   certificatesImage: { 
     publicId: String,
     url: String 
