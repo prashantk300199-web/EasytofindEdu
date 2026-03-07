@@ -100,6 +100,7 @@ export const createInstituteValidator = Joi.object({
   )
 });
 export const createCourseValidator = Joi.object({
+  institute: Joi.string().hex().length(24).required(),
   name: Joi.string().required(),
   description: Joi.string(),
   mode: Joi.string().valid('English', 'Hindi', 'Hinglish').required()
