@@ -43,7 +43,8 @@ const studentSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: "",
-      // e.g. "10th", "12th", "Graduation", "Post Graduation"
+      // e.g. "class_10th", "class_12th", "bachelor", "master"
+      index: true, // Index for career guidance queries
     },
     status: {
       type: String,
@@ -67,20 +68,20 @@ const studentSchema = new mongoose.Schema(
 
     // Address
     address: {
-      line1:   { type: String, default: "" },
-      line2:   { type: String, default: "" },
-      city:    { type: String, default: "" },
-      state:   { type: String, default: "" },
+      line1: { type: String, default: "" },
+      line2: { type: String, default: "" },
+      city: { type: String, default: "" },
+      state: { type: String, default: "" },
       pincode: { type: String, default: "" },
       country: { type: String, default: "India" },
     },
 
     // Academic background
     academicDetails: {
-      schoolName:      { type: String, default: "" },
+      schoolName: { type: String, default: "" },
       boardOrUniversity: { type: String, default: "" },
-      passingYear:     { type: String, default: "" },
-      percentage:      { type: String, default: "" },
+      passingYear: { type: String, default: "" },
+      percentage: { type: String, default: "" },
     },
 
     // Interests / preferred subjects
@@ -90,6 +91,75 @@ const studentSchema = new mongoose.Schema(
     enrolledBatches: [
       { type: mongoose.Schema.Types.ObjectId, ref: "Batch" },
     ],
+
+    // ============= CAREER GUIDANCE MODULE (NON-BREAKING) =============
+    // All career guidance fields grouped under this object
+    // Existing code unaffected - backward compatible
+    careerGuidance: {
+      // Profile reference
+      profileId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "StudentCareerProfile",
+        default: null,
+      },
+
+      // Stream selection (PCM, PCB, Commerce, Arts, etc)
+      stream: {
+        type: String,
+        default: "",
+        index: true,
+      },
+
+      // Preferences from questionnaire
+      preferences: {
+        relocationWilling: {
+          type: String,
+          enum: ["yes", "no", "maybe", ""],
+          default: "",
+        },
+        preferredCities: [String],
+        financialCapacity: {
+          type: String,
+          enum: ["low", "lower_middle", "middle", "upper_middle", "high", ""],
+          default: "",
+        },
+        timeframe: {
+          type: String,
+          enum: ["immediate", "short_term", "medium_term", "long_term", ""],
+          default: "",
+        },
+        careerGoal: {
+          type: String,
+          default: "",
+        },
+        expertiseSubject: {
+          type: String,
+          default: "",
+        },
+      },
+
+      // Saved paths & tracking
+      savedPaths: [
+        {
+          nodeId: mongoose.Schema.Types.ObjectId,
+          savedAt: Date,
+          status: {
+            type: String,
+            enum: ["interested", "exploring", "decided", "pursuing"],
+          },
+        },
+      ],
+
+      // Questionnaire completion status
+      questionnaireCompletedAt: Date,
+      isQuestionnaireCompleted: {
+        type: Boolean,
+        default: false,
+      },
+
+      // Last activity in career guidance module
+      lastActivityAt: Date,
+    },
   },
   { timestamps: true }
 );
