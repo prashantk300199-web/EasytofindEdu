@@ -3,6 +3,8 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
+import path from 'path';
+import { fileURLToPath } from 'url';
 import env from "./config/env.js";
 import errorHandler from "./middlewares/errorHandler.js";
 import { requestLogger, securityHeaders, validateRequestSize } from "./middlewares/requestLogger.js";
@@ -81,6 +83,9 @@ app.get("/", (req, res) => {
   );
 });
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 app.get("/api/v1/health", (req, res) => {
   res.status(200).json(
     new ApiResponse(200, "Server is healthy.", {
@@ -114,6 +119,9 @@ app.use("/api/v1/public", publicRoutes);
 app.use("/api/v1/career-guidance", careerGuidancePublicRoutes);
 app.use("/api/v1/career-guidance", careerGuidanceRoutes); 
 app.use("/api/v1/admin/career", careerGuidanceAdminRoutes); 
+
+app.use(express.static(path.join(__dirname, '../public')));
+
 
 // 404 handler
 app.all("*", (req, res) => {
