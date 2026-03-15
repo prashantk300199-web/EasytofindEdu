@@ -20,6 +20,10 @@ import instituteAuthRoutes from './routes/institute.auth.routes.js';
 import ownerInstituteRoutes from './routes/owner.institute.routes.js';
 import adminInstituteRoutes from './routes/admin.institute.routes.js';
 import studentAuthRoutes from "./routes/student.routes.js";
+import careerGuidancePublicRoutes from "./routes/careerGuidance.public.routes.js";
+import careerGuidanceRoutes from "./routes/careerGuidance.routes.js";
+import careerGuidanceAdminRoutes from "./routes/careerGuidance.admin.routes.js";
+
 import enquiryRoutes from "./routes/enquiry.routes.js";
 import publicRoutes from "./routes/public.routes.js";
 import ApiResponse from "./utils/ApiResponse.js";
@@ -101,13 +105,15 @@ app.use("/api/v1/admin/auth", adminAuthRoutes);
 app.use("/api/v1/admin/members", adminRoutes);
 app.use("/api/v1/admin/owners", adminOwnerRoutes);
 app.use("/api/v1/admin/hostels", adminHostelRoutes);
-// NOTE: /api/v1/admin/institutes must be registered BEFORE /api/v1/admin/* generic routes
 app.use("/api/v1/admin/institutes", adminInstituteRoutes);
 app.use("/api/v1/institutes", instituteRoutes);
 app.use("/api/v1/institute/auth", instituteAuthRoutes);
 app.use("/api/v1/student/auth", studentAuthRoutes);
 app.use("/api/v1/enquiries", enquiryRoutes);
 app.use("/api/v1/public", publicRoutes);
+app.use("/api/v1/career-guidance", careerGuidancePublicRoutes);
+app.use("/api/v1/career-guidance", careerGuidanceRoutes); 
+app.use("/api/v1/admin/career", careerGuidanceAdminRoutes); 
 
 // 404 handler
 app.all("*", (req, res) => {
