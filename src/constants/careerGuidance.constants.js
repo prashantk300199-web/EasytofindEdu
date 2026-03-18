@@ -24,13 +24,7 @@ export const STREAMS = {
   GENERAL: "general",
 };
 
-export const EXAM_TYPES = {
-  ENTRANCE_EXAM: "entrance_exam",
-  COMPETITIVE_EXAM: "competitive_exam",
-  PROFESSIONAL_EXAM: "professional_exam",
-  CERTIFICATION_EXAM: "certification_exam",
-  BOARD_EXAM: "board_exam",
-};
+
 
 export const COURSE_TYPES = {
   DEGREE: "degree",
@@ -221,6 +215,181 @@ export const CACHE_KEYS = {
   TREE_STRUCTURE: "tree_structure",
   NODE_DETAILS: (nodeId) => `node_details_${nodeId}`,
   RECOMMENDATIONS: (studentId) => `recommendations_${studentId}`,
+};
+
+
+
+// ============= CAREER PROGRAM CONSTANTS =============
+
+export const PROGRAM_CATEGORIES = [
+  "Diploma & Skill",
+  "Engineering",
+  "Medical & Allied",
+  "Science",
+  "Commerce",
+  "Arts & Humanities",
+  "Law",
+  "Professional Certification",
+  "Postgraduate",
+  "Specialization",
+  "ITI Trade",
+  "Other",
+];
+
+export const PROGRAM_TAGS = [
+  "after_10th",
+  "after_12th",
+  "pcm",
+  "pcb",
+  "commerce",
+  "arts",
+  "not_sure",
+  "featured",
+  "trending",
+  "high_placement",
+];
+
+export const PROGRAM_STATUS = ["draft", "published", "archived"];
+
+export const PROGRAM_DIFFICULTY_LEVELS = ["easy", "moderate", "hard", "very_hard"];
+
+export const INDUSTRY_DEMAND_LEVELS = ["very_low", "low", "moderate", "high", "very_high"];
+
+
+export const FEE_FREQUENCIES = ["per-year", "one-time", "per-month"];
+
+export const GROWTH_RATES = ["Excellent", "Good", "Steady", "Declining"];
+
+// ============= STREAM CONSTANTS =============
+
+
+
+export const QUALIFICATIONS = {
+  CLASS_10: "10th_pass",
+  CLASS_12: "12th_pass",
+  BACHELOR: "bachelor",
+  MASTER: "master",
+  PHD: "phd",
+  ANY: "any",
+};
+
+// ============= ENTRANCE EXAM CONSTANTS =============
+
+export const EXAM_TYPES = [
+  "engineering",
+  "medical",
+  "law",
+  "banking",
+  "govt",
+  "management",
+  "other",
+];
+
+export const EXAM_FREQUENCY = [
+  "once_a_year",
+  "twice_a_year",
+  "multiple",
+  "ongoing",
+];
+
+// ============= COLLEGE CONSTANTS =============
+
+export const COLLEGE_TYPES = ["govt", "private", "deemed", "autonomous", "national"];
+
+export const COLLEGE_APPROVALS = ["AICTE", "UGC", "NAAC", "NBA", "ACCR"];
+
+// ============= JOB ROLE CONSTANTS =============
+
+export const WORK_ENVIRONMENTS = ["office", "remote", "hybrid", "field"];
+
+export const WORK_LIFE_BALANCE = ["excellent", "good", "moderate", "demanding"];
+
+// ============= RELATIONSHIP TYPES =============
+
+export const PROGRAM_RELATIONSHIPS = [
+  "specialization",
+  "postgraduate",
+  "certification",
+  "skill_add",
+  "related",
+];
+
+export const PROFICIENCY_LEVELS = [
+  "beginner",
+  "intermediate",
+  "advanced",
+  "expert",
+];
+
+// ============= AUDIT ACTIONS =============
+
+export const AUDIT_ACTIONS = {
+  CREATE_PROGRAM: "CREATE_PROGRAM",
+  UPDATE_PROGRAM: "UPDATE_PROGRAM",
+  PUBLISH_PROGRAM: "PUBLISH_PROGRAM",
+  ARCHIVE_PROGRAM: "ARCHIVE_PROGRAM",
+  ADD_EXAM_TO_PROGRAM: "ADD_EXAM_TO_PROGRAM",
+  ADD_COLLEGE_TO_PROGRAM: "ADD_COLLEGE_TO_PROGRAM",
+  CREATE_EXAM: "CREATE_EXAM",
+  UPDATE_EXAM: "UPDATE_EXAM",
+  PUBLISH_EXAM: "PUBLISH_EXAM",
+  ARCHIVE_EXAM: "ARCHIVE_EXAM",
+  CREATE_COLLEGE: "CREATE_COLLEGE",
+  UPDATE_COLLEGE: "UPDATE_COLLEGE",
+  ARCHIVE_COLLEGE: "ARCHIVE_COLLEGE",
+  BULK_IMPORT_PROGRAMS: "BULK_IMPORT_PROGRAMS",
+};
+
+// ============= PAGINATION DEFAULTS =============
+
+export const DEFAULT_PAGE = 1;
+export const DEFAULT_LIMIT = 12;
+export const MAX_LIMIT = 100;
+
+// ============= BULK IMPORT LIMITS =============
+
+export const MAX_BULK_IMPORT = 1000;
+
+// ============= SEARCH CONFIGS =============
+
+export const SEARCH_FIELDS = [
+  "title",
+  "description",
+  "overview",
+  "jobRoles.title",
+];
+
+// ============= ERROR MESSAGES =============
+
+export const ERROR_MESSAGES = {
+  PROGRAM_NOT_FOUND: "Program not found",
+  EXAM_NOT_FOUND: "Exam not found",
+  COLLEGE_NOT_FOUND: "College not found",
+  INVALID_STREAM: "Invalid stream",
+  INVALID_CATEGORY: "Invalid category",
+  MISSING_REQUIRED_FIELDS: "Missing required fields",
+  DUPLICATE_PROGRAM: "Program with this title already exists",
+  DUPLICATE_EXAM: "Exam with this name already exists",
+  DUPLICATE_COLLEGE: "College with this name already exists",
+  UNAUTHORIZED: "You are not authorized to perform this action",
+  INVALID_STATUS: "Invalid status",
+};
+
+// ============= SUCCESS MESSAGES =============
+
+export const SUCCESS_MESSAGES = {
+  PROGRAM_CREATED: "Program created successfully",
+  PROGRAM_UPDATED: "Program updated successfully",
+  PROGRAM_PUBLISHED: "Program published successfully",
+  PROGRAM_ARCHIVED: "Program archived successfully",
+  EXAM_CREATED: "Exam created successfully",
+  EXAM_UPDATED: "Exam updated successfully",
+  EXAM_PUBLISHED: "Exam published successfully",
+  EXAM_ARCHIVED: "Exam archived successfully",
+  COLLEGE_CREATED: "College created successfully",
+  COLLEGE_UPDATED: "College updated successfully",
+  COLLEGE_ARCHIVED: "College archived successfully",
+  BULK_IMPORT_SUCCESS: "Bulk import completed successfully",
 };
 
 export default {

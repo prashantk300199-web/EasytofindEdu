@@ -25,7 +25,8 @@ import studentAuthRoutes from "./routes/student.routes.js";
 import careerGuidancePublicRoutes from "./routes/careerGuidance.public.routes.js";
 import careerGuidanceRoutes from "./routes/careerGuidance.routes.js";
 import careerGuidanceAdminRoutes from "./routes/careerGuidance.admin.routes.js";
-
+import careerProgramPublicRoutes from "./routes/careerProgram.public.routes.js";
+import careerProgramAdminRoutes from "./routes/careerProgram.admin.routes.js";
 import enquiryRoutes from "./routes/enquiry.routes.js";
 import publicRoutes from "./routes/public.routes.js";
 import ApiResponse from "./utils/ApiResponse.js";
@@ -116,6 +117,8 @@ app.use("/api/v1/institute/auth", instituteAuthRoutes);
 app.use("/api/v1/student/auth", studentAuthRoutes);
 app.use("/api/v1/enquiries", enquiryRoutes);
 app.use("/api/v1/public", publicRoutes);
+app.use("/api/v1/careers", careerProgramPublicRoutes);
+app.use("/api/v1/admin/careers", careerProgramAdminRoutes);
 app.use("/api/v1/career-guidance", careerGuidancePublicRoutes);
 app.use("/api/v1/career-guidance", careerGuidanceRoutes); 
 app.use("/api/v1/admin/career", careerGuidanceAdminRoutes); 
