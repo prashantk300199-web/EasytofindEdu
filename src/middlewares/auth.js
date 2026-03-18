@@ -229,3 +229,7 @@ export const authenticateInstituteOwner = asyncHandler(async (req, res, next) =>
     throw new ApiError(401, "Authentication failed. Please login again.");
   }
 });
+
+
+export default authenticateAdmin;
+
