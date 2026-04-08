@@ -18,7 +18,6 @@ const adminSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
-    required: true,
     trim: true,
     maxlength: 15,
   },

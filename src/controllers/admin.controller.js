@@ -12,12 +12,14 @@ export const createAdmin = asyncHandler(async (req, res) => {
     throw new ApiError(409, "Admin with this email already exists.");
   }
 
+  const role = req.body.role ? req.body.role.toLowerCase() : ADMIN_ROLE.ADMIN;
+
   const admin = await Admin.create({
     name,
     email,
     phone,
     password,
-    role: ADMIN_ROLE.ADMIN,
+    role,
     createdBy: req.admin._id,
   });
 
@@ -30,7 +32,7 @@ export const getAllAdmins = asyncHandler(async (req, res) => {
   const { page = 1, limit = 20 } = req.query;
   const skip = (Number(page) - 1) * Number(limit);
 
-  const filter = { role: ADMIN_ROLE.ADMIN };
+  const filter = {};
 
   const [admins, total] = await Promise.all([
     Admin.find(filter)
@@ -57,7 +59,6 @@ export const getAllAdmins = asyncHandler(async (req, res) => {
 export const getAdminById = asyncHandler(async (req, res) => {
   const admin = await Admin.findOne({
     _id: req.params.id,
-    role: ADMIN_ROLE.ADMIN,
   });
 
   if (!admin) {
@@ -72,7 +73,6 @@ export const getAdminById = asyncHandler(async (req, res) => {
 export const updateAdmin = asyncHandler(async (req, res) => {
   const admin = await Admin.findOne({
     _id: req.params.id,
-    role: ADMIN_ROLE.ADMIN,
   });
 
   if (!admin) {
@@ -100,7 +100,6 @@ export const updateAdmin = asyncHandler(async (req, res) => {
 export const deleteAdmin = asyncHandler(async (req, res) => {
   const admin = await Admin.findOne({
     _id: req.params.id,
-    role: ADMIN_ROLE.ADMIN,
   });
 
   if (!admin) {

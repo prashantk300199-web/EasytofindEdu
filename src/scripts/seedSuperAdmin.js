@@ -10,27 +10,30 @@ const seedSuperAdmin = async () => {
     await mongoose.connect(process.env.MONGO_URI);
     console.log("Connected to MongoDB");
 
-    const existing = await Admin.findOne({ role: ADMIN_ROLE.SUPERADMIN });
+    const email = "superadmin@vidyamarg.com";
+    const password = "Ankit@9771";
+
+    const existing = await Admin.findOne({ email });
     if (existing) {
-      console.log("SuperAdmin already exists:");
-      console.log(`  Email: ${existing.email}`);
+      console.log(`Admin with email ${email} already exists:`);
+      console.log(`  Role: ${existing.role}`);
       console.log("Skipping seed.");
       process.exit(0);
     }
 
     const superAdmin = await Admin.create({
       name: "Super Admin",
-      email: "superadmin@vidyamarg.com",
-      phone: "9999999999",
-      password: "SuperAdmin@123",
+      email,
+      phone: "9771122334", // Using a placeholder or keeping what's there
+      password,
       role: ADMIN_ROLE.SUPERADMIN,
     });
 
     console.log("SuperAdmin created successfully:");
     console.log(`  Name: ${superAdmin.name}`);
     console.log(`  Email: ${superAdmin.email}`);
-    console.log(`  Password: SuperAdmin@123`);
-    console.log("IMPORTANT: Change the password after first login!");
+    console.log(`  Password: ${password}`);
+    console.log("IMPORTANT: Keep these credentials secure!");
 
     process.exit(0);
   } catch (error) {

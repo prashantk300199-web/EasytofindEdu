@@ -34,6 +34,9 @@ import ApiResponse from "./utils/ApiResponse.js";
 
 const app = express();
 
+// Trust proxy for rate limiting (needed for express-rate-limit v7+)
+app.set("trust proxy", 1);
+
 // Security middleware - Applied first
 app.use(helmet());
 app.use(securityHeaders);
@@ -47,6 +50,7 @@ app.use(cors({
       'https://vidyamarg.org',
       'https://www.vidyamarg.org',
       'http://localhost:5173', // for development
+      'http://localhost:5174', // alternative dev port (Vite)
       'http://localhost:3000', // alternative dev port
       'http://localhost:8080', // alternative dev port
     ];
