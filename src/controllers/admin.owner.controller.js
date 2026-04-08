@@ -19,12 +19,34 @@ export const getAllOwners = asyncHandler(async (req, res) => {
     ];
   }
 
+  const pipeline = [
+    { $match: filter },
+    { $sort: { createdAt: -1 } },
+    { $skip: skip },
+    { $limit: Number(limit) },
+    {
+      $lookup: {
+        from: "hostels",
+        localField: "_id",
+        foreignField: "owner",
+        as: "hostels",
+        pipeline: [
+          {
+            $project: {
+              name: 1,
+              photos: { $slice: ["$photos", 1] }, // Only need first photo for preview
+              status: 1,
+              "address.city": 1,
+              hostel_type: 1,
+            },
+          },
+        ],
+      },
+    },
+  ];
+
   const [owners, total] = await Promise.all([
-    User.find(filter)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(Number(limit))
-      .lean(),
+    User.aggregate(pipeline),
     User.countDocuments(filter),
   ]);
 
