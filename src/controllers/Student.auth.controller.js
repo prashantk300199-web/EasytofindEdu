@@ -94,3 +94,8 @@ export const adminBlockStudent = asyncHandler(async (req, res) => {
   const student = await studentAuthService.blockStudent(req.params.id);
   return res.status(200).json(new ApiResponse(200, "Student blocked successfully.", student));
 });
+
+export const adminUnblockStudent = asyncHandler(async (req, res) => {
+  const student = await studentAuthService.unblockStudent(req.params.id);
+  return res.status(200).json(new ApiResponse(200, "Student unblocked successfully.", student));
+});

@@ -13,6 +13,7 @@ import {
   adminGetStudentById,
   adminDeleteStudent,
   adminBlockStudent,
+  adminUnblockStudent,
 } from "../controllers/Student.auth.controller.js";
 import { authenticateStudent } from "../middlewares/AuthenticateStudents.js";
 // Add authenticateAdmin from your existing auth middleware
@@ -99,6 +100,9 @@ router.delete("/admin/students/:id", authenticateAdmin, adminDeleteStudent);
 
 // PUT    /api/v1/student/auth/admin/students/:id/block
 router.put("/admin/students/:id/block", authenticateAdmin, adminBlockStudent);
+
+// PUT    /api/v1/student/auth/admin/students/:id/unblock
+router.put("/admin/students/:id/unblock", authenticateAdmin, adminUnblockStudent);
 
 
 export default router;

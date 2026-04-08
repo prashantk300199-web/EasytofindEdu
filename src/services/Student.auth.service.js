@@ -166,3 +166,9 @@ export const blockStudent = async (id) => {
   if (!student) throw new ApiError(404, "Student not found.");
   return student;
 };
+
+export const unblockStudent = async (id) => {
+  const student = await Student.findByIdAndUpdate(id, { status: "verified" }, { new: true });
+  if (!student) throw new ApiError(404, "Student not found.");
+  return student;
+};
