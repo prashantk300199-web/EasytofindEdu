@@ -112,6 +112,20 @@ export const updateHostelSortPriority = asyncHandler(async (req, res) => {
   );
 });
 
+export const toggleHostelOpenStatus = asyncHandler(async (req, res) => {
+  const hostel = await Hostel.findById(req.params.id);
+  if (!hostel) {
+    throw new ApiError(404, "Hostel not found.");
+  }
+
+  hostel.is_open = !hostel.is_open;
+  await hostel.save();
+
+  res.status(200).json(
+    new ApiResponse(200, `Hostel ${hostel.is_open ? 'activated' : 'deactivated'}.`, hostel)
+  );
+});
+
 export const deleteHostel = asyncHandler(async (req, res) => {
   const hostel = await Hostel.findById(req.params.id);
 

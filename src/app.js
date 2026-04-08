@@ -21,6 +21,7 @@ import instituteRoutes from './routes/institute.routes.js';
 import instituteAuthRoutes from './routes/institute.auth.routes.js';
 import ownerInstituteRoutes from './routes/owner.institute.routes.js';
 import adminInstituteRoutes from './routes/admin.institute.routes.js';
+import adminInstituteOwnerRoutes from "./routes/admin.institute.owner.routes.js";
 import studentAuthRoutes from "./routes/student.routes.js";
 import careerGuidancePublicRoutes from "./routes/careerGuidance.public.routes.js";
 import careerGuidanceRoutes from "./routes/careerGuidance.routes.js";
@@ -53,6 +54,8 @@ app.use(cors({
       'http://localhost:5174', // alternative dev port (Vite)
       'http://localhost:3000', // alternative dev port
       'http://localhost:8080', // alternative dev port
+      'http://localhost:8081', // alternative dev port
+      'http://localhost:5175', // alternative dev port
     ];
 
     if (!origin || allowedOrigins.includes(origin)) {
@@ -79,6 +82,8 @@ app.use(requestLogger);
 // Increased limits to handle multiple image uploads (5 × 10MB = 50MB)
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Health check endpoints
@@ -114,6 +119,7 @@ app.use("/api/v1/reviews", reviewRoutes);
 app.use("/api/v1/admin/auth", adminAuthRoutes);
 app.use("/api/v1/admin/members", adminRoutes);
 app.use("/api/v1/admin/owners", adminOwnerRoutes);
+app.use("/api/v1/admin/institute-owners", adminInstituteOwnerRoutes);
 app.use("/api/v1/admin/hostels", adminHostelRoutes);
 app.use("/api/v1/admin/institutes", adminInstituteRoutes);
 app.use("/api/v1/institutes", instituteRoutes);
