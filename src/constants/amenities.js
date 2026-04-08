@@ -4,6 +4,7 @@ const AMENITIES = {
     { key: "mattress", label: "Mattress" },
     { key: "pillow", label: "Pillow" },
     { key: "bed_with_storage", label: "Bed with Storage" },
+    { key: "bed", label: "Bed" },
     { key: "wardrobe", label: "Wardrobe / Almirah" },
     { key: "study_table", label: "Study Table" },
     { key: "study_chair", label: "Study Chair" },
@@ -26,6 +27,7 @@ const AMENITIES = {
     { key: "geyser", label: "Geyser / Hot Water" },
     { key: "24x7_water_in_washroom", label: "24x7 Washroom Water" },
     { key: "separate_bath_and_toilet", label: "Separate Bath & Toilet" },
+    { key: "one_washroom_per_6_students", label: "1 Washroom per 6 Students" }
   ],
 
   // 3. Food & Kitchen
@@ -40,7 +42,7 @@ const AMENITIES = {
     { key: "inhouse_kitchen", label: "In-house Kitchen" },
     { key: "tiffin_service", label: "Tiffin Service" },
     { key: "refrigerator", label: "Common Refrigerator" },
-    { key: "induction_allowed", label: "Induction Allowed in Room" },
+    { key: "induction", label: "Induction" },
   ],
 
   // 4. Water & Utilities
@@ -50,6 +52,13 @@ const AMENITIES = {
     { key: "24x7_water_supply", label: "24x7 General Water Supply" },
     { key: "electricity_backup", label: "Power Backup (Generator)" },
     { key: "inverter_backup", label: "Inverter Backup" },
+    { key: "wifi", label: "Wi-Fi(High-Speed Internet)" },
+    { key: "high_speed_internet", label: "High-Speed Internet" },
+    { key: "refrigerator", label: "Common Refrigerator" },
+    { key: "induction", label: "Induction" },
+    { key: "guest_room_for_parents", label: "Guest Room for Parents" },
+
+
   ],
 
   // 5. Internet & Connectivity
@@ -64,7 +73,8 @@ const AMENITIES = {
     { key: "paid_laundry_service", label: "Paid Laundry Service" },
     { key: "drying_area", label: "Clothes Drying Area" },
     { key: "daily_room_cleaning", label: "Daily Room Cleaning" },
-    { key: "weekly_room_cleaning", label: "Weekly Room Cleaning" },
+    { key: "6_days_in_a_week", label: "6 Days a Week Cleaning" },
+    { key: "5_days_in_a_week", label: "5 Days a Week Cleaning" },
   ],
 
   // 7. Safety & Security
@@ -76,6 +86,8 @@ const AMENITIES = {
     { key: "fire_extinguisher", label: "Fire Extinguisher" },
     { key: "first_aid_kit", label: "First Aid Kit" },
     { key: "full_time_warden", label: "Full-time Warden" },
+    { key: "transport_facilities", label: "Transport Facilities" },
+
   ],
 
   // 8. Building & Accessibility
