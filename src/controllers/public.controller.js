@@ -1,4 +1,5 @@
 import Hostel from "../models/Hostel.js";
+import HostelInquiry from "../models/HostelInquiry.js";
 import { HOSTEL_STATUS } from "../constants/enums.js";
 import { searchHostels } from "../services/search.service.js";
 import { trackView } from "../services/analytics.service.js";
@@ -99,5 +100,39 @@ export const getAmenitiesList = asyncHandler(async (req, res) => {
 export const getRulesList = asyncHandler(async (req, res) => {
   res.status(200).json(
     new ApiResponse(200, "Rules fetched.", RULES)
+  );
+});
+
+export const createHostelInquiry = asyncHandler(async (req, res) => {
+  const { name, email, phone, address, profession, hostelId } = req.body;
+
+  if (!name || !email || !phone || !address || !profession || !hostelId) {
+    throw new ApiError(400, "All fields are required");
+  }
+
+  // Check if hostel exists
+  const hostel = await Hostel.findById(hostelId).populate("owner", "phone");
+  if (!hostel) {
+    throw new ApiError(404, "Hostel not found");
+  }
+
+  const inquiry = await HostelInquiry.create({
+    name,
+    email,
+    phone,
+    address,
+    profession,
+    hostel: hostelId,
+  });
+
+  res.status(201).json(
+    new ApiResponse(201, "Inquiry submitted successfully", {
+      inquiry,
+      contactDetails: {
+        name: hostel.name,
+        phone: hostel.owner?.phone || hostel.warden?.contact_number || "Contact via warden",
+        warden_phone: hostel.warden?.contact_number,
+      }
+    })
   );
 });

@@ -6,6 +6,7 @@ import {
   getHostelCities,
   getAmenitiesList,
   getRulesList,
+  createHostelInquiry,
 } from "../controllers/public.controller.js";
 
 const router = Router();
@@ -16,5 +17,6 @@ router.get("/hostels/cities", getHostelCities);
 router.get("/hostels/:slug", getPublicHostelBySlug);
 router.get("/amenities", getAmenitiesList);
 router.get("/rules", getRulesList);
+router.post("/hostels/inquiry", createHostelInquiry);
 
 export default router;

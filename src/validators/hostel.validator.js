@@ -218,6 +218,7 @@ export const createHostelSchema = Joi.object({
     indian_toilet: joiBoolean.default(false),
     western_toilet: joiBoolean.default(false),
     attached_washroom_available: joiBoolean.default(false),
+    total_washrooms: joiNumber.integer().min(0).default(0),
     washroom_to_student_ratio: Joi.string().trim().allow(""),
   }).default({}),
 
@@ -262,6 +263,23 @@ export const createHostelSchema = Joi.object({
     fire_noc: joiBoolean.default(false),
     hostel_association_member: joiBoolean.default(false),
   }).default({}),
+
+  /* ------------------------ Nearby Distances ---------------------------- */
+  nearby_distances: Joi.object({
+    institutes: Joi.array().items(distanceItemSchema).default([]),
+    landmarks: Joi.array().items(distanceItemSchema).default([]),
+  }).default({}),
+
+  /* --------------------------- Warden ----------------------------------- */
+  warden: Joi.object({
+    name: Joi.string().trim().allow(""),
+    gender: Joi.string().valid("male", "female", "other").allow(""),
+    age: joiNumber.min(18).allow(null, ""),
+    contact_number: Joi.string().trim().allow(""),
+  }).default({}),
+
+  /* --------------------------- Others ----------------------------------- */
+  total_hostel_beds: joiNumber.integer().min(0).default(0),
 
   notice_period_days: joiNumber.integer().min(0).default(30),
 

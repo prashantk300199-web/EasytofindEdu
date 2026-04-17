@@ -1,4 +1,5 @@
 import Hostel from "../models/Hostel.js";
+import HostelInquiry from "../models/HostelInquiry.js";
 import Booking from "../models/Booking.js";
 import Review from "../models/Review.js";
 import { HOSTEL_STATUS } from "../constants/enums.js";
@@ -6,6 +7,62 @@ import { deleteMultipleImages } from "../services/cloudinary.service.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
+
+export const getHostelInquiries = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 50 } = req.query;
+  const skip = (Number(page) - 1) * Number(limit);
+
+  const filter = { hostel: req.params.id };
+
+  const [inquiries, total] = await Promise.all([
+    HostelInquiry.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit))
+      .lean(),
+    HostelInquiry.countDocuments(filter),
+  ]);
+
+  res.status(200).json(
+    new ApiResponse(200, "Inquiries fetched.", {
+      inquiries,
+      pagination: {
+        current_page: Number(page),
+        total_pages: Math.ceil(total / Number(limit)),
+        total_results: total,
+      },
+    })
+  );
+});
+
+export const getAllHostelInquiries = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 50, status } = req.query;
+  const skip = (Number(page) - 1) * Number(limit);
+
+  const filter = {};
+  if (status) filter.status = status;
+
+  const [inquiries, total] = await Promise.all([
+    HostelInquiry.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit))
+      .populate("hostel", "name address.city")
+      .lean(),
+    HostelInquiry.countDocuments(filter),
+  ]);
+
+  res.status(200).json(
+    new ApiResponse(200, "All inquiries fetched.", {
+      inquiries,
+      pagination: {
+        current_page: Number(page),
+        total_pages: Math.ceil(total / Number(limit)),
+        total_results: total,
+      },
+    })
+  );
+});
 
 export const getAllHostels = asyncHandler(async (req, res) => {
   const { page = 1, limit = 20, status, city, hostel_type, search } = req.query;
