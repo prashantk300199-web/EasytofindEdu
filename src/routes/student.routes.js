@@ -14,6 +14,7 @@ import {
   adminDeleteStudent,
   adminBlockStudent,
   adminUnblockStudent,
+  adminUpdateStudent,
 } from "../controllers/Student.auth.controller.js";
 import { authenticateStudent } from "../middlewares/AuthenticateStudents.js";
 // Add authenticateAdmin from your existing auth middleware
@@ -103,6 +104,9 @@ router.put("/admin/students/:id/block", authenticateAdmin, adminBlockStudent);
 
 // PUT    /api/v1/student/auth/admin/students/:id/unblock
 router.put("/admin/students/:id/unblock", authenticateAdmin, adminUnblockStudent);
+
+// PUT    /api/v1/student/auth/admin/students/:id
+router.put("/admin/students/:id", authenticateAdmin, adminUpdateStudent);
 
 
 export default router;

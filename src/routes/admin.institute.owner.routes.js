@@ -3,7 +3,8 @@ import {
   getAllInstituteOwners,
   getInstituteOwnerById,
   updateInstituteOwnerStatus,
-  deleteInstituteOwner
+  deleteInstituteOwner,
+  updateInstituteOwnerDetails
 } from "../controllers/admin.institute.owner.controller.js";
 import { authenticateAdmin } from "../middlewares/auth.js";
 
@@ -14,6 +15,7 @@ router.use(authenticateAdmin);
 router.get("/", getAllInstituteOwners);
 router.get("/:id", getInstituteOwnerById);
 router.patch("/:id/status", updateInstituteOwnerStatus);
+router.patch("/:id", updateInstituteOwnerDetails);
 router.delete("/:id", deleteInstituteOwner);
 
 export default router;

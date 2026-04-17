@@ -172,3 +172,15 @@ export const unblockStudent = async (id) => {
   if (!student) throw new ApiError(404, "Student not found.");
   return student;
 };
+
+export const adminUpdateStudentService = async (id, data) => {
+  // Prevent direct password and email change for security/flow reasons
+  delete data.password;
+  
+  const student = await Student.findByIdAndUpdate(id, data, {
+    new: true,
+    runValidators: true,
+  });
+  if (!student) throw new ApiError(404, "Student not found.");
+  return student;
+};

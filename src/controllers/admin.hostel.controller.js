@@ -280,3 +280,48 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     })
   );
 });
+
+export const updateHostelDetails = asyncHandler(async (req, res) => {
+  const updates = req.body;
+  const hostel = await Hostel.findById(req.params.id);
+
+  if (!hostel) {
+    throw new ApiError(404, "Hostel not found.");
+  }
+
+  // Simple top-level fields
+  const directFields = [
+    "name", "masked_name", "hostel_type", "description",
+    "total_hostel_beds", "notice_period_days", "in_room_amenities",
+    "common_amenities", "recreation", "is_open"
+  ];
+
+  directFields.forEach(field => {
+    if (updates[field] !== undefined) hostel[field] = updates[field];
+  });
+
+  // Nested objects - partial updates within them
+  const nestedFields = [
+    "address", "rent", "laundry", "washroom_details",
+    "warden", "security", "rules", "nearby_distances",
+    "building_details", "legal_docs"
+  ];
+
+  nestedFields.forEach(field => {
+    if (updates[field] && typeof updates[field] === "object") {
+      // We merge with current values to allow partial updates of nested objects
+      const current = hostel[field] ? (hostel[field].toObject ? hostel[field].toObject() : hostel[field]) : {};
+      hostel[field] = { ...current, ...updates[field] };
+    }
+  });
+
+  // Array fields that should be replaced entirely if provided
+  if (updates.rooms) hostel.rooms = updates.rooms;
+  if (updates.meal_plans) hostel.meal_plans = updates.meal_plans;
+
+  await hostel.save();
+
+  res.status(200).json(
+    new ApiResponse(200, "Hostel details updated successfully.", hostel)
+  );
+});

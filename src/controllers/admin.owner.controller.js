@@ -121,3 +121,33 @@ export const deleteOwner = asyncHandler(async (req, res) => {
     new ApiResponse(200, "Owner and all associated hostels deleted.")
   );
 });
+
+export const updateOwnerDetails = asyncHandler(async (req, res) => {
+  const { name, email, phone, businessName, aadhaarNumber, panNumber, address, bio } = req.body;
+
+  const owner = await User.findById(req.params.id);
+  if (!owner) {
+    throw new ApiError(404, "Owner not found.");
+  }
+
+  if (name !== undefined) owner.name = name;
+  if (email !== undefined) owner.email = email;
+  if (phone !== undefined) owner.phone = phone;
+  if (businessName !== undefined) owner.businessName = businessName;
+  if (aadhaarNumber !== undefined) owner.aadhaarNumber = aadhaarNumber;
+  if (panNumber !== undefined) owner.panNumber = panNumber;
+  if (bio !== undefined) owner.bio = bio;
+
+  if (address) {
+    owner.address = {
+      ...owner.address,
+      ...address,
+    };
+  }
+
+  await owner.save();
+
+  res.status(200).json(
+    new ApiResponse(200, "Owner details updated successfully.", owner)
+  );
+});

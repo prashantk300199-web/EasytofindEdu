@@ -10,6 +10,7 @@ import {
   toggleReviewApproval,
   getDashboardStats,
   toggleHostelOpenStatus,
+  updateHostelDetails,
 } from "../controllers/admin.hostel.controller.js";
 import { authenticateAdmin } from "../middlewares/auth.js";
 
@@ -21,6 +22,7 @@ router.get("/dashboard", getDashboardStats);
 router.get("/", getAllHostels);
 router.get("/:id", getHostelById);
 router.patch("/:id/status", updateHostelStatus);
+router.patch("/:id", updateHostelDetails);
 router.patch("/:id/priority", updateHostelSortPriority);
 router.patch("/:id/toggle-open", toggleHostelOpenStatus);
 router.delete("/:id", deleteHostel);

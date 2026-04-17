@@ -117,3 +117,33 @@ export const deleteInstituteOwner = asyncHandler(async (req, res) => {
     new ApiResponse(200, "Institute owner and all associated institutes deleted.")
   );
 });
+
+export const updateInstituteOwnerDetails = asyncHandler(async (req, res) => {
+  const { name, email, phone, businessName, aadhaarNumber, panNumber, address, bio } = req.body;
+
+  const owner = await InstituteOwner.findById(req.params.id);
+  if (!owner) {
+    throw new ApiError(404, "Owner not found.");
+  }
+
+  if (name !== undefined) owner.name = name;
+  if (email !== undefined) owner.email = email;
+  if (phone !== undefined) owner.phone = phone;
+  if (businessName !== undefined) owner.businessName = businessName;
+  if (aadhaarNumber !== undefined) owner.aadhaarNumber = aadhaarNumber;
+  if (panNumber !== undefined) owner.panNumber = panNumber;
+  if (bio !== undefined) owner.bio = bio;
+
+  if (address) {
+    owner.address = {
+      ...owner.address,
+      ...address,
+    };
+  }
+
+  await owner.save();
+
+  res.status(200).json(
+    new ApiResponse(200, "Institute owner details updated successfully.", owner)
+  );
+});

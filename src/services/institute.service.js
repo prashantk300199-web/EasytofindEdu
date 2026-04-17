@@ -198,27 +198,38 @@ export const getInstituteByIdService = async (id) => {
 
 
 
-export const updateInstituteService = asyncHandler(async (id, data, userId, files) => {
-    // Handle image uploads if provided
-    if (files?.logo) {
-      data.logo = extractImageData(files.logo[0]);
+export const updateInstituteService = async (id, data, userId, files) => {
+  const institute = await Institute.findById(id);
+  if (!institute) {
+    throw new ApiError(404, 'Institute not found');
+  }
+
+  // Handle image uploads if provided
+  if (files?.logo) {
+    data.logo = extractImageData(files.logo[0]);
+  }
+  if (files?.coverImage) {
+    data.coverImage = extractImageData(files.coverImage[0]);
+  }
+
+  // Define nested fields for deep merging
+  const nestedFields = ['location', 'facilities', 'academicInfo', 'transparency'];
+
+  nestedFields.forEach(field => {
+    if (data[field] && typeof data[field] === 'object') {
+      const current = institute[field] ? (institute[field].toObject ? institute[field].toObject() : institute[field]) : {};
+      institute[field] = { ...current, ...data[field] };
+      delete data[field]; // Remove from data so it doesn't get overwritten by basic assignment
     }
-    if (files?.coverImage) {
-      data.coverImage = extractImageData(files.coverImage[0]);
-    }
-    
-    const institute = await Institute.findByIdAndUpdate(
-      id,
-      { ...data, updatedBy: userId },
-      { new: true, runValidators: true }
-    );
-    
-    if (!institute) {
-      throw new ApiError(404, 'Institute not found');
-    }
-    
-    return institute;
   });
+
+  // Assign remaining top-level fields
+  Object.assign(institute, data);
+  institute.updatedBy = userId;
+
+  await institute.save();
+  return institute;
+};
 
 export const deleteInstituteService = asyncHandler(async (id) => {
   const institute = await Institute.findByIdAndDelete(id);

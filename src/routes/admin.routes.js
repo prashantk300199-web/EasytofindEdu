@@ -7,12 +7,14 @@ import { ADMIN_ROLE } from "../constants/enums.js";
 const router = Router();
 
 router.use(authenticateAdmin);
-router.use(authorizeRoles(ADMIN_ROLE.SUPERADMIN));
 
-router.post("/", createAdmin);
-router.get("/", getAllAdmins);
-router.get("/:id", getAdminById);
-router.put("/:id", updateAdmin);
-router.delete("/:id", deleteAdmin);
+// Anyone with an admin account (Admin or SuperAdmin) can view the list
+router.get("/", authorizeRoles(ADMIN_ROLE.SUPERADMIN, ADMIN_ROLE.ADMIN), getAllAdmins);
+
+// Only SuperAdmins can manage other admins
+router.post("/", authorizeRoles(ADMIN_ROLE.SUPERADMIN), createAdmin);
+router.get("/:id", authorizeRoles(ADMIN_ROLE.SUPERADMIN), getAdminById);
+router.put("/:id", authorizeRoles(ADMIN_ROLE.SUPERADMIN), updateAdmin);
+router.delete("/:id", authorizeRoles(ADMIN_ROLE.SUPERADMIN), deleteAdmin);
 
 export default router;
