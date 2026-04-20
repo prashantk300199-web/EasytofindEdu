@@ -53,8 +53,8 @@ const hostelSchema = new mongoose.Schema({
   address: {
     line1: { type: String, required: true },
     line2: { type: String, default: "" },
-    area: { type: String, required: true, index: true }, 
-    subarea: { type: String, required: true }, 
+    area: { type: String, required: true, index: true },
+    subarea: { type: String, required: true },
     city: { type: String, required: true, index: true },
     state: { type: String, required: true },
     pincode: { type: String, required: true },
@@ -65,17 +65,17 @@ const hostelSchema = new mongoose.Schema({
     coordinates: { type: [Number], required: true },
   },
   rent: {
-    security_deposit_type: { 
-      type: String, 
+    security_deposit_type: {
+      type: String,
       enum: ["two_month_fee", "one_month_fee", "15_day_fee", "no_deposit"],
-      required: true 
+      required: true
     },
     registration_fee: { type: Number, default: 0, min: 0 },
   },
-  
+
   // ADDED FROM YOUR IMAGE: Total Beds in entire hostel
-  total_hostel_beds: { type: Number, default: 0 }, 
-  
+  total_hostel_beds: { type: Number, default: 0 },
+
   rooms: [roomSchema],
   meal_plans: [mealPlanSchema],
   in_room_amenities: [{ type: String }],
@@ -126,16 +126,16 @@ const hostelSchema = new mongoose.Schema({
     custom_rules: [{ type: String }],
   },
   nearby_distances: {
-    institutes: [distanceItemSchema],
-    landmarks: [distanceItemSchema],
+    institutes: { type: [distanceItemSchema], default: [] },
+    landmarks: { type: [distanceItemSchema], default: [] },
   },
   building_details: {
-    building_age_years: { type: Number, min: 0 },
-    flooring_type: { type: String, enum: ["tiles", "marble", "granite", "mosaic"] },
-    number_of_floors: { type: Number, min: 1 },
+    building_age_years: { type: Number, min: 0, default: 0 },
+    flooring_type: { type: String, enum: ["tiles", "marble", "granite", "mosaic"], default: "tiles" },
+    number_of_floors: { type: Number, min: 1, default: 1 },
   },
   legal_docs: {
-    member_of_hostel_wellfare_association: { type: Boolean, default: false },
+    hostel_registration: { type: Boolean, default: false },
     form_3: { type: Boolean, default: false },
     food_license: { type: Boolean, default: false },
     character_certificate: { type: Boolean, default: false },

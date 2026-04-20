@@ -74,6 +74,10 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  wishlist: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Hostel",
+  }],
 }, { timestamps: true });
 
 userSchema.pre("save", async function (next) {

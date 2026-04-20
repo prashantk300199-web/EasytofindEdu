@@ -15,6 +15,9 @@ import {
   adminBlockStudent,
   adminUnblockStudent,
   adminUpdateStudent,
+  toggleWishlist,
+  getWishlist,
+  adminGetWishlistAnalytics,
 } from "../controllers/Student.auth.controller.js";
 import { authenticateStudent } from "../middlewares/AuthenticateStudents.js";
 // Add authenticateAdmin from your existing auth middleware
@@ -107,6 +110,19 @@ router.put("/admin/students/:id/unblock", authenticateAdmin, adminUnblockStudent
 
 // PUT    /api/v1/student/auth/admin/students/:id
 router.put("/admin/students/:id", authenticateAdmin, adminUpdateStudent);
+
+// ─────────────────────────────────────────────────────────────
+// WISHLIST ROUTES
+// ─────────────────────────────────────────────────────────────
+
+// GET /api/v1/student/auth/wishlist
+router.get("/wishlist", authenticateStudent, getWishlist);
+
+// POST /api/v1/student/auth/wishlist/:hostelId
+router.post("/wishlist/:hostelId", authenticateStudent, toggleWishlist);
+
+// GET /api/v1/student/auth/admin/wishlist-analytics
+router.get("/admin/wishlist-analytics", authenticateAdmin, adminGetWishlistAnalytics);
 
 
 export default router;

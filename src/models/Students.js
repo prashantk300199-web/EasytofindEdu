@@ -160,6 +160,9 @@ const studentSchema = new mongoose.Schema(
       // Last activity in career guidance module
       lastActivityAt: Date,
     },
+    wishlist: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "Hostel" },
+    ],
   },
   { timestamps: true }
 );

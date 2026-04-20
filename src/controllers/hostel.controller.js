@@ -50,11 +50,11 @@ const logger = {
  * @throws {ApiError} If validation fails
  */
 const validateBody = (schema, data) => {
-const { error, value } = schema.validate(data, {
-  abortEarly: false,
-  stripUnknown: true,
-  convert: true,
-});
+  const { error, value } = schema.validate(data, {
+    abortEarly: false,
+    stripUnknown: true,
+    convert: true,
+  });
 
   if (error) {
     const errors = error.details.map((detail) => ({
@@ -62,11 +62,11 @@ const { error, value } = schema.validate(data, {
       message: detail.message,
       type: detail.type,
     }));
-    
+
     logger.warn("Validation failed", { errors, timestamp: new Date().toISOString() });
     throw new ApiError(400, "Validation failed. Please check all required fields.", errors);
   }
-  
+
   logger.debug("Validation passed", { fields: Object.keys(value) });
   return value;
 };
@@ -94,11 +94,11 @@ const { error, value } = schema.validate(data, {
 export const createHostel = asyncHandler(async (req, res) => {
 
   console.log("RAW BODY:", req.body);
-console.log("DATA FIELD:", req.body?.data);
+  console.log("DATA FIELD:", req.body?.data);
   const startTime = Date.now();
   const userId = req.user._id;
   const uploadedPublicIds = []; // Track uploaded files for cleanup on failure
-  
+
   try {
     logger.info("Creating new hostel", { userId, timestamp: new Date().toISOString() });
 
@@ -114,28 +114,28 @@ console.log("DATA FIELD:", req.body?.data);
       throw new ApiError(403, "Your account has been blocked. Please contact support.");
     }
 
-// 🔥 Parse multipart JSON (VERY IMPORTANT)
-let parsedBody = req.body;
+    // 🔥 Parse multipart JSON (VERY IMPORTANT)
+    let parsedBody = req.body;
 
-if (req.body.data) {
-  try {
-    parsedBody =
-      typeof req.body.data === "string"
-        ? JSON.parse(req.body.data)
-        : req.body.data;
+    if (req.body.data) {
+      try {
+        parsedBody =
+          typeof req.body.data === "string"
+            ? JSON.parse(req.body.data)
+            : req.body.data;
 
-    logger.debug("Parsed hostel body successfully");
-  } catch (e) {
-    logger.error("Failed to parse hostel body", { error: e.message });
-    throw new ApiError(
-      400,
-      "Invalid JSON in data field. Please ensure the data is valid JSON format."
-    );
-  }
-}
+        logger.debug("Parsed hostel body successfully");
+      } catch (e) {
+        logger.error("Failed to parse hostel body", { error: e.message });
+        throw new ApiError(
+          400,
+          "Invalid JSON in data field. Please ensure the data is valid JSON format."
+        );
+      }
+    }
 
-// 🔥 Now validate parsed body
-const hostelData = validateBody(createHostelSchema, parsedBody);
+    // 🔥 Now validate parsed body
+    const hostelData = validateBody(createHostelSchema, parsedBody);
     // Validate and upload photos in parallel
     let photos = [];
     if (req.files && req.files.length > 0) {
@@ -157,11 +157,11 @@ const hostelData = validateBody(createHostelSchema, parsedBody);
         const failureMessage = uploadResult.failed
           .map(f => `"${f.filename}": ${f.error}`)
           .join("; ");
-        
-        logger.warn("Some files failed to upload", { 
-          userId, 
+
+        logger.warn("Some files failed to upload", {
+          userId,
           failedCount: uploadResult.failed.length,
-          successCount: uploadResult.successful.length 
+          successCount: uploadResult.successful.length
         });
 
         // Cleanup uploaded files if partial upload failed
@@ -171,7 +171,7 @@ const hostelData = validateBody(createHostelSchema, parsedBody);
         }
 
         throw new ApiError(
-          400, 
+          400,
           `Failed to upload ${uploadResult.failed.length}/${req.files.length} files. ${failureMessage}`
         );
       }
@@ -182,9 +182,9 @@ const hostelData = validateBody(createHostelSchema, parsedBody);
         publicId: upload.publicId,
       }));
 
-      logger.info("All hostel photos uploaded successfully", { 
-        userId, 
-        photoCount: photos.length 
+      logger.info("All hostel photos uploaded successfully", {
+        userId,
+        photoCount: photos.length
       });
     }
 
@@ -205,7 +205,7 @@ const hostelData = validateBody(createHostelSchema, parsedBody);
     const baseSlug = generateSlug(`${hostelData.name} ${hostelData.address.city}`);
     let slug = baseSlug;
     let counter = 1;
-    
+
     while (counter < 100) {
       const existingSlug = await Hostel.findOne({ slug });
       if (!existingSlug) break;
@@ -237,7 +237,7 @@ const hostelData = validateBody(createHostelSchema, parsedBody);
     // Update user statistics
     await User.findByIdAndUpdate(
       userId,
-      { 
+      {
         $inc: { totalHostels: 1 },
         $set: { lastHostelCreatedAt: new Date() }
       },
@@ -245,11 +245,11 @@ const hostelData = validateBody(createHostelSchema, parsedBody);
     );
 
     const duration = Date.now() - startTime;
-    logger.info("Hostel created successfully", { 
-      hostelId: hostel._id, 
-      userId, 
+    logger.info("Hostel created successfully", {
+      hostelId: hostel._id,
+      userId,
       duration: `${duration}ms`,
-      photoCount: photos.length 
+      photoCount: photos.length
     });
 
     res.status(201).json(
@@ -302,7 +302,7 @@ export const getMyHostels = asyncHandler(async (req, res) => {
 
     // Build filter
     const filter = { owner: userId };
-    
+
     // Validate and apply status filter
     if (req.query.status) {
       const validStatuses = ["pending", "approved", "rejected", "deleted"];
@@ -338,11 +338,11 @@ export const getMyHostels = asyncHandler(async (req, res) => {
     const totalPages = Math.ceil(total / limitNum);
     const duration = Date.now() - startTime;
 
-    logger.info("Hostels fetched successfully", { 
-      userId, 
-      count: hostels.length, 
-      total, 
-      duration: `${duration}ms` 
+    logger.info("Hostels fetched successfully", {
+      userId,
+      count: hostels.length,
+      total,
+      duration: `${duration}ms`
     });
 
     res.status(200).json(
@@ -436,7 +436,7 @@ export const updateHostel = asyncHandler(async (req, res) => {
   const startTime = Date.now();
   const { id } = req.params;
   const userId = req.user._id;
-  const uploadedPublicIds = []; 
+  const uploadedPublicIds = [];
 
   try {
     // 1. Validate MongoDB ObjectId format
@@ -472,7 +472,7 @@ export const updateHostel = asyncHandler(async (req, res) => {
     if (req.files && req.files.length > 0) {
       const existingCount = hostel.photos.length;
       const newCount = req.files.length;
-      
+
       if (existingCount + newCount > 20) {
         throw new ApiError(400, `Cannot add ${newCount} photos. Current: ${existingCount}, max allowed: 20`);
       }
@@ -510,14 +510,14 @@ export const updateHostel = asyncHandler(async (req, res) => {
 
     // 6. UPDATE NESTED OBJECTS (Comprehensive List)
     const nestedObjects = [
-      "address", 
-      "rent", 
-      "meal_plans", 
-      "laundry", 
+      "address",
+      "rent",
+      "meal_plans",
+      "laundry",
       "washroom_details", // Includes total_washrooms & ratio
-      "security", 
-      "rules", 
-      "nearby_distances", 
+      "security",
+      "rules",
+      "nearby_distances",
       "building_details", // Includes age, flooring, floors
       "legal_docs",
       "warden" // New Warden object (name, age, gender, contact)
@@ -532,17 +532,17 @@ export const updateHostel = asyncHandler(async (req, res) => {
 
     // 7. UPDATE BASIC FIELDS & ARRAYS
     const otherFields = [
-      "name", 
-      "hostel_type", 
-      "description", 
-      "is_open", 
-      "in_room_amenities", 
-      "common_amenities", 
-      "recreation", 
+      "name",
+      "hostel_type",
+      "description",
+      "is_open",
+      "in_room_amenities",
+      "common_amenities",
+      "recreation",
       "total_hostel_beds", // Total bed inventory
       "notice_period_days"
     ];
-    
+
     otherFields.forEach((field) => {
       if (fields[field] !== undefined && fields[field] !== null) {
         hostel[field] = fields[field];
@@ -635,7 +635,7 @@ export const deleteHostelPhoto = asyncHandler(async (req, res) => {
     }
 
     const photo = hostel.photos[photoIndex];
-    
+
     // Delete from cloudinary if publicId exists
     if (photo.publicId) {
       try {
@@ -651,10 +651,10 @@ export const deleteHostelPhoto = asyncHandler(async (req, res) => {
     await hostel.save();
 
     const duration = Date.now() - startTime;
-    logger.info("Photo deleted successfully", { 
-      hostelId: id, 
-      photoId, 
-      userId, 
+    logger.info("Photo deleted successfully", {
+      hostelId: id,
+      photoId,
+      userId,
       remainingPhotos: hostel.photos.length,
       duration: `${duration}ms`
     });
@@ -734,9 +734,9 @@ export const deleteHostel = asyncHandler(async (req, res) => {
     );
 
     const duration = Date.now() - startTime;
-    logger.info("Hostel deleted successfully", { 
-      id, 
-      userId, 
+    logger.info("Hostel deleted successfully", {
+      id,
+      userId,
       photosDeleted: publicIds.length,
       duration: `${duration}ms`
     });
@@ -796,16 +796,16 @@ export const toggleHostelAvailability = asyncHandler(async (req, res) => {
 
     const statusText = hostel.is_open ? "open for bookings" : "closed for bookings";
 
-    logger.info("Hostel availability toggled", { 
-      id, 
-      userId, 
-      previousStatus, 
+    logger.info("Hostel availability toggled", {
+      id,
+      userId,
+      previousStatus,
       newStatus: hostel.is_open,
       timestamp: new Date().toISOString()
     });
 
     res.status(200).json(
-      new ApiResponse(200, `Hostel is now ${statusText}.`, { 
+      new ApiResponse(200, `Hostel is now ${statusText}.`, {
         is_open: hostel.is_open,
         message: `Your hostel is ${statusText}. Bookings are ${hostel.is_open ? 'enabled' : 'disabled'}.`,
         toggled_at: new Date().toISOString(),
@@ -864,8 +864,8 @@ export const getHostelAnalytics = asyncHandler(async (req, res) => {
       performance: {
         views: hostel.views_count || 0,
         leads: hostel.leads_count || 0,
-        conversion_rate: hostel.leads_count && hostel.views_count 
-          ? ((hostel.leads_count / hostel.views_count) * 100).toFixed(2) 
+        conversion_rate: hostel.leads_count && hostel.views_count
+          ? ((hostel.leads_count / hostel.views_count) * 100).toFixed(2)
           : 0,
         last_viewed: hostel.last_viewed_at || null,
       },
@@ -882,9 +882,9 @@ export const getHostelAnalytics = asyncHandler(async (req, res) => {
     };
 
     const duration = Date.now() - startTime;
-    logger.info("Analytics fetched successfully", { 
-      id, 
-      userId, 
+    logger.info("Analytics fetched successfully", {
+      id,
+      userId,
       views: analytics.performance.views,
       leads: analytics.performance.leads,
       duration: `${duration}ms`

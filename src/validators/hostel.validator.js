@@ -272,10 +272,10 @@ export const createHostelSchema = Joi.object({
 
   /* --------------------------- Warden ----------------------------------- */
   warden: Joi.object({
-    name: Joi.string().trim().allow(""),
-    gender: Joi.string().valid("male", "female", "other").allow(""),
-    age: joiNumber.min(18).allow(null, ""),
-    contact_number: Joi.string().trim().allow(""),
+    name: Joi.string().trim().allow("").empty(""),
+    gender: Joi.string().valid("male", "female", "other").allow("").empty(""),
+    age: joiNumber.min(18).allow(null, "").empty(""),
+    contact_number: Joi.string().trim().allow("").empty(""),
   }).default({}),
 
   /* --------------------------- Others ----------------------------------- */

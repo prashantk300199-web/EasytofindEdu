@@ -104,3 +104,23 @@ export const adminUpdateStudent = asyncHandler(async (req, res) => {
   const student = await studentAuthService.adminUpdateStudentService(req.params.id, req.body);
   return res.status(200).json(new ApiResponse(200, "Student updated successfully.", student));
 });
+
+// ─── Wishlist ──────────────────────────────────────────────────────────────────
+
+export const toggleWishlist = asyncHandler(async (req, res) => {
+  const { hostelId } = req.params;
+  const result = await studentAuthService.toggleHostelWishlist(req.student._id, hostelId);
+  return res.status(200).json(new ApiResponse(200, result.message, result.wishlist));
+});
+
+export const getWishlist = asyncHandler(async (req, res) => {
+  const wishlist = await studentAuthService.getStudentWishlist(req.student._id);
+  return res.status(200).json(new ApiResponse(200, "Wishlist fetched successfully.", wishlist));
+});
+
+// ─── Admin Wishlist Analytics ──────────────────────────────────────────────────
+
+export const adminGetWishlistAnalytics = asyncHandler(async (req, res) => {
+  const analytics = await studentAuthService.getWishlistAnalytics();
+  return res.status(200).json(new ApiResponse(200, "Wishlist analytics fetched successfully.", analytics));
+});

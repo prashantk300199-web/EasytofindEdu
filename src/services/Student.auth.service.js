@@ -184,3 +184,62 @@ export const adminUpdateStudentService = async (id, data) => {
   if (!student) throw new ApiError(404, "Student not found.");
   return student;
 };
+
+// ─── Wishlist ──────────────────────────────────────────────────────────────────
+
+export const toggleHostelWishlist = async (studentId, hostelId) => {
+  const student = await Student.findById(studentId);
+  if (!student) throw new ApiError(404, "Student not found.");
+
+  const index = student.wishlist.indexOf(hostelId);
+  let message = "";
+
+  if (index === -1) {
+    student.wishlist.push(hostelId);
+    message = "Hostel added to wishlist.";
+  } else {
+    student.wishlist.splice(index, 1);
+    message = "Hostel removed from wishlist.";
+  }
+
+  await student.save();
+  return { message, wishlist: student.wishlist };
+};
+
+export const getStudentWishlist = async (studentId) => {
+  const student = await Student.findById(studentId).populate("wishlist");
+  if (!student) throw new ApiError(404, "Student not found.");
+  return student.wishlist;
+};
+
+// ─── Admin Analytics ──────────────────────────────────────────────────────────
+
+export const getWishlistAnalytics = async () => {
+  // Find all students who have items in their wishlist
+  const students = await Student.find({ "wishlist.0": { $exists: true } })
+    .populate("wishlist", "name slug address photos hostel_type")
+    .select("name email phone wishlist");
+
+  // Aggregate by hostel to see "most popular"
+  const hostelMap = {};
+  
+  students.forEach(student => {
+    student.wishlist.forEach(hostel => {
+      const hId = hostel._id.toString();
+      if (!hostelMap[hId]) {
+        hostelMap[hId] = {
+          hostel,
+          interestedStudents: []
+        };
+      }
+      hostelMap[hId].interestedStudents.push({
+        _id: student._id,
+        name: student.name,
+        email: student.email,
+        phone: student.phone
+      });
+    });
+  });
+
+  return Object.values(hostelMap);
+};
