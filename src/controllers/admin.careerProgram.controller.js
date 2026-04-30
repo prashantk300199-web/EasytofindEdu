@@ -6,7 +6,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 class AdminCareerProgramController {
   /**
    * Get all programs (admin view - includes drafts/archived)
-   * GET /api/v1/admin/careers/programs?status=draft&page=1&limit=20
+   * GET /api/v1/admin/careers/programs?status=draft&page=1&limit=20nnn
    * 
    * Supports status: "published" | "draft" | "archived" | "all"
    */
