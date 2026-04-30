@@ -8,7 +8,7 @@ import maskName from "../utils/maskName.js";
 import generateSearchTags from "../utils/generateSearchTags.js";
 import { createHostelSchema, updateHostelSchema } from "../validators/hostel.validator.js";
 import { deleteMultipleImages } from "../services/cloudinary.service.js";
-import { uploadMultipleFiles, cleanupUploadedFiles } from "../services/upload.service.js";
+import { uploadMultipleFiles, cleanupUploadedFiles, uploadFileWithRetry } from "../services/upload.service.js";
 
 
 
@@ -199,6 +199,28 @@ export const createHostel = asyncHandler(async (req, res) => {
       await cleanupUploadedFiles(uploadedPublicIds);
       uploadedPublicIds.length = 0;
       throw new ApiError(400, "Maximum 20 photos allowed.");
+    }
+
+    // 🔥 Handle Menu Card Uploads for each Meal Plan
+    if (hostelData.meal_plans && Array.isArray(hostelData.meal_plans)) {
+      for (let i = 0; i < hostelData.meal_plans.length; i++) {
+        const fieldName = `menu_card_${i}`;
+        const menuFile = req.files.find(f => f.fieldname === fieldName);
+
+        if (menuFile) {
+          logger.info(`Uploading menu card for meal plan ${i}`, { userId });
+          const uploadResult = await uploadFileWithRetry(menuFile, {
+            folder: "vidyamarg/hostels/menus",
+            allowedFormats: ["jpg", "jpeg", "png", "webp"],
+          });
+
+          uploadedPublicIds.push(uploadResult.publicId);
+          hostelData.meal_plans[i].menu_card = {
+            url: uploadResult.url,
+            publicId: uploadResult.publicId
+          };
+        }
+      }
     }
 
     // Generate unique slug
@@ -497,6 +519,41 @@ export const updateHostel = asyncHandler(async (req, res) => {
           publicId: upload.publicId,
         });
       });
+    }
+
+    // 4b. Handle Menu Card Uploads for updated Meal Plans
+    if (updateData.meal_plans && Array.isArray(updateData.meal_plans)) {
+      for (let i = 0; i < updateData.meal_plans.length; i++) {
+        const fieldName = `menu_card_${i}`;
+        const menuFile = req.files.find(f => f.fieldname === fieldName);
+
+        if (menuFile) {
+          logger.info(`Uploading updated menu card for meal plan ${i}`, { id, userId });
+          
+          // Delete old menu card if exists
+          if (hostel.meal_plans[i] && hostel.meal_plans[i].menu_card && hostel.meal_plans[i].menu_card.publicId) {
+            try {
+              await deleteMultipleImages([hostel.meal_plans[i].menu_card.publicId]);
+            } catch (err) {
+              logger.warn("Failed to delete old menu card", { publicId: hostel.meal_plans[i].menu_card.publicId });
+            }
+          }
+
+          const uploadResult = await uploadFileWithRetry(menuFile, {
+            folder: "vidyamarg/hostels/menus",
+            allowedFormats: ["jpg", "jpeg", "png", "webp"],
+          });
+
+          uploadedPublicIds.push(uploadResult.publicId);
+          updateData.meal_plans[i].menu_card = {
+            url: uploadResult.url,
+            publicId: uploadResult.publicId
+          };
+        } else if (hostel.meal_plans[i] && hostel.meal_plans[i].menu_card) {
+          // Keep existing menu card if no new file provided
+          updateData.meal_plans[i].menu_card = hostel.meal_plans[i].menu_card;
+        }
+      }
     }
 
     // 5. Update GPS location if coordinates provided
