@@ -1,5 +1,6 @@
 import Hostel from "../models/Hostel.js";
 import HostelInquiry from "../models/HostelInquiry.js";
+import Offer from "../models/Offer.js";
 import { HOSTEL_STATUS } from "../constants/enums.js";
 import { searchHostels } from "../services/search.service.js";
 import { trackView } from "../services/analytics.service.js";
@@ -13,11 +14,22 @@ import RULES from "../constants/rules.js";
 export const getPublicHostels = asyncHandler(async (req, res) => {
   const result = await searchHostels(req.query);
 
-  const hostels = result.hostels.map((hostel) => ({
-    ...hostel,
-    name: hostel.masked_name || maskName(hostel.name),
-    original_name: undefined,
-  }));
+  const hostelIds = result.hostels.map(h => h._id);
+  const activeOffers = await Offer.find({
+    hostel: { $in: hostelIds },
+    isActive: true,
+    validTill: { $gte: new Date() }
+  }).lean();
+
+  const hostels = result.hostels.map((hostel) => {
+    const hostelOffers = activeOffers.filter(o => o.hostel.toString() === hostel._id.toString());
+    return {
+      ...hostel,
+      name: hostel.masked_name || maskName(hostel.name),
+      original_name: undefined,
+      offers: hostelOffers
+    };
+  });
 
   res.status(200).json(
     new ApiResponse(200, "Hostels fetched.", {
@@ -41,9 +53,16 @@ export const getPublicHostelBySlug = asyncHandler(async (req, res) => {
 
   await trackView(hostel._id);
 
+  const activeOffers = await Offer.find({
+    hostel: hostel._id,
+    isActive: true,
+    validTill: { $gte: new Date() }
+  }).lean();
+
   const publicHostel = {
     ...hostel,
     name: hostel.masked_name || maskName(hostel.name),
+    offers: activeOffers
   };
   delete publicHostel.original_name;
 

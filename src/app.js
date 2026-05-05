@@ -11,6 +11,7 @@ import { requestLogger, securityHeaders, validateRequestSize } from "./middlewar
 import authRoutes from "./routes/auth.routes.js";
 import ownerRoutes from "./routes/owner.routes.js";
 import hostelRoutes from "./routes/hostel.routes.js";
+import offerRoutes from "./routes/offer.routes.js";
 import bookingRoutes from "./routes/booking.routes.js";
 import reviewRoutes from "./routes/review.routes.js";
 import adminAuthRoutes from "./routes/admin.auth.routes.js";
@@ -118,8 +119,9 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/owner/institutes", ownerInstituteRoutes);
 app.use("/api/v1/owner", ownerRoutes);
 app.use("/api/v1/hostels", hostelRoutes);
+app.use("/api/v1/offers", offerRoutes);
 app.use("/api/v1/bookings", bookingRoutes);
-app.use("/api/v1/reviews", reviewRoutes); 
+app.use("/api/v1/reviews", reviewRoutes);
 app.use("/api/v1/admin/auth", adminAuthRoutes);
 app.use("/api/v1/admin/dashboard", adminDashboardRoutes);
 app.use("/api/v1/admin/members", adminRoutes);
@@ -138,8 +140,8 @@ app.use("/api/v1/inquiries", inquiryRoutes);
 app.use("/api/v1/careers", careerProgramPublicRoutes);
 app.use("/api/v1/admin/careers", careerProgramAdminRoutes);
 app.use("/api/v1/career-guidance", careerGuidancePublicRoutes);
-app.use("/api/v1/career-guidance", careerGuidanceRoutes); 
-app.use("/api/v1/admin/career", careerGuidanceAdminRoutes); 
+app.use("/api/v1/career-guidance", careerGuidanceRoutes);
+app.use("/api/v1/admin/career", careerGuidanceAdminRoutes);
 
 app.use(express.static(path.join(__dirname, '../public')));
 
