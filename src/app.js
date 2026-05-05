@@ -55,8 +55,9 @@ app.use(validateRequestSize);
 app.use(cors({
   origin: (origin, callback) => {
     const allowedOrigins = [
-      'https://vidyamarg.org',
-      'https://www.vidyamarg.org',
+      'https://easytofindedu.com',
+      'https://www.easytofindedu.com',
+      'https://admin.easytofindedu.com',
       'http://localhost:5173', // for development
       'http://localhost:5174', // alternative dev port (Vite)
       'http://localhost:3000', // alternative dev port
