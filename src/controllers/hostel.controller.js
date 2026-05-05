@@ -27,19 +27,20 @@ const logger = {
  * @returns {Object} Parsed hostel data
  * @throws {ApiError} If JSON parsing fails
  */
-// const parseHostelBody = (req) => {
-//   if (req.body.data) {
-//     try {
-//       const parsed = typeof req.body.data === "string" ? JSON.parse(req.body.data) : req.body.data;
-//       logger.debug("Parsed hostel body successfully");
-//       return parsed;
-//     } catch (e) {
-//       logger.error("Failed to parse hostel body", { error: e.message });
-//       throw new ApiError(400, "Invalid JSON in data field. Please ensure the data is valid JSON format.");
-//     }
-//   }
-//   return req.body;
-// };
+const parseHostelBody = (req) => {
+  if (req.body.data) {
+    try {
+      const parsed = typeof req.body.data === "string" ? JSON.parse(req.body.data) : req.body.data;
+      logger.debug("Parsed hostel body successfully");
+      return parsed;
+    } catch (e) {
+      logger.error("Failed to parse hostel body", { error: e.message });
+      throw new ApiError(400, "Invalid JSON in data field. Please ensure the data is valid JSON format.");
+    }
+  }
+  return req.body;
+};
+
 
 /**
  * Validate request body against Joi schema
@@ -569,16 +570,16 @@ export const updateHostel = asyncHandler(async (req, res) => {
     const nestedObjects = [
       "address",
       "rent",
-      "meal_plans",
       "laundry",
-      "washroom_details", // Includes total_washrooms & ratio
+      "washroom_details",
       "security",
       "rules",
       "nearby_distances",
-      "building_details", // Includes age, flooring, floors
+      "building_details",
       "legal_docs",
-      "warden" // New Warden object (name, age, gender, contact)
+      "warden"
     ];
+
 
     nestedObjects.forEach((obj) => {
       if (fields[obj] !== undefined) {
@@ -606,10 +607,14 @@ export const updateHostel = asyncHandler(async (req, res) => {
       }
     });
 
-    // 8. Handle Room Array specifically (Inventory Update)
+    // 8. Handle Array Fields specifically (Replacement logic)
     if (fields.rooms && Array.isArray(fields.rooms)) {
-      hostel.rooms = fields.rooms; // Replaces existing room sharing inventory
+      hostel.rooms = fields.rooms;
     }
+    if (fields.meal_plans && Array.isArray(fields.meal_plans)) {
+      hostel.meal_plans = fields.meal_plans;
+    }
+
 
     // 9. Masked name and Search Tags Update
     if (fields.name) {
