@@ -1,6 +1,10 @@
 import app from "./src/app.js";
 import connectDB from "./src/config/db.js";
 import env from "./src/config/env.js";
+import dns from "dns";
+
+// Fix for MongoDB SRV ECONNREFUSED in Node.js 18+
+dns.setDefaultResultOrder("ipv4first");
 
 const attemptListen = (port) =>
   new Promise((resolve, reject) => {

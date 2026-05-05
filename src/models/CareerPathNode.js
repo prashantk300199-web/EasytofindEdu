@@ -59,14 +59,12 @@ const careerPathNodeSchema = new mongoose.Schema(
       trim: true,
       maxlength: 200,
       unique: true,
-      index: true,
     },
     slug: {
       type: String,
       required: true,
       unique: true,
       lowercase: true,
-      index: true,
     },
     nodeType: {
       type: String,
@@ -166,7 +164,6 @@ const careerPathNodeSchema = new mongoose.Schema(
     level: {
       type: Number,
       default: 1, // Depth in tree
-      index: true,
     },
 
     // Applicability Filters
@@ -232,7 +229,6 @@ const careerPathNodeSchema = new mongoose.Schema(
     isFeatured: {
       type: Boolean,
       default: false,
-      index: true,
     },
 
     // External References

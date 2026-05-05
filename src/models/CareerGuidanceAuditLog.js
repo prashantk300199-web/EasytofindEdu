@@ -61,7 +61,6 @@ const careerGuidanceAuditLogSchema = new mongoose.Schema(
     performedAt: {
       type: Date,
       default: Date.now,
-      index: true,
     },
   },
   {

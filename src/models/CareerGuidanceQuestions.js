@@ -31,7 +31,6 @@ const careerGuidanceQuestionSchema = new mongoose.Schema(
       type: Number,
       required: true,
       unique: true,
-      index: true,
     },
     questionText: {
       type: String,
@@ -98,7 +97,6 @@ const careerGuidanceQuestionSchema = new mongoose.Schema(
     displayOrder: {
       type: Number,
       default: 0,
-      index: true, // ONLY ONE index definition
     },
 
     // Metadata
@@ -124,7 +122,6 @@ const careerGuidanceQuestionSchema = new mongoose.Schema(
 // Define indexes efficiently
 careerGuidanceQuestionSchema.index({ category: 1, isActive: 1 });
 careerGuidanceQuestionSchema.index({ displayOrder: 1 }); // Only one definition
-careerGuidanceQuestionSchema.index({ questionNumber: 1 });
 
 // Virtuals
 careerGuidanceQuestionSchema.virtual("totalOptions").get(function () {

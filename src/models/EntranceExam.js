@@ -93,7 +93,6 @@ const entranceExamSchema = new mongoose.Schema(
       type: String,
       enum: ["easy", "moderate", "hard", "very_hard"],
       default: "hard",
-      index: true,
     },
 
     // Success metrics

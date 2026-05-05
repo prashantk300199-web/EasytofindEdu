@@ -282,7 +282,6 @@ const careerProgramSchema = new mongoose.Schema(
     displayOrder: {
       type: Number,
       default: 999,
-      index: true,
     },
 
     // ============= STATUS =============
