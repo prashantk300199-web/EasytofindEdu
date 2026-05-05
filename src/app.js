@@ -35,6 +35,7 @@ import publicRoutes from "./routes/public.routes.js";
 import admissionRoutes from "./routes/admission.routes.js";
 import inquiryRoutes from "./routes/inquiry.routes.js";
 import referenceRoutes from "./routes/reference.routes.js";
+import cgRoutes from "./routes/cg.routes.js";
 
 import ApiResponse from "./utils/ApiResponse.js";
 
@@ -144,6 +145,7 @@ app.use("/api/v1/admin/careers", careerProgramAdminRoutes);
 app.use("/api/v1/career-guidance", careerGuidancePublicRoutes);
 app.use("/api/v1/career-guidance", careerGuidanceRoutes);
 app.use("/api/v1/admin/career", careerGuidanceAdminRoutes);
+app.use("/api/v1/cg", cgRoutes);
 
 app.use(express.static(path.join(__dirname, '../public')));
 
