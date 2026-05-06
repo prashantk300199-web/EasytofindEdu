@@ -36,6 +36,7 @@ import admissionRoutes from "./routes/admission.routes.js";
 import inquiryRoutes from "./routes/inquiry.routes.js";
 import referenceRoutes from "./routes/reference.routes.js";
 import cgRoutes from "./routes/cg.routes.js";
+import compareRoutes from "./routes/compare.routes.js";
 
 import ApiResponse from "./utils/ApiResponse.js";
 
@@ -140,6 +141,7 @@ app.use("/api/v1/admissions", admissionRoutes);
 app.use("/api/v1/public", publicRoutes);
 app.use("/api/v1/inquiries", inquiryRoutes);
 app.use("/api/v1/references", referenceRoutes);
+app.use("/api/v1/compare", compareRoutes);
 
 app.use("/api/v1/careers", careerProgramPublicRoutes);
 app.use("/api/v1/admin/careers", careerProgramAdminRoutes);

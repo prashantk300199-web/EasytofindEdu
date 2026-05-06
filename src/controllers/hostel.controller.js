@@ -144,7 +144,7 @@ export const createHostel = asyncHandler(async (req, res) => {
 
       // Upload all files in parallel with error handling
       const uploadResult = await uploadMultipleFiles(req.files, {
-        folder: "vidyamarg/hostels",
+        folder: "EasyToFind/hostels",
         allowedFormats: ["jpg", "jpeg", "png", "webp"],
         concurrency: 3, // 3 concurrent uploads
         maxRetries: 3,
@@ -211,7 +211,7 @@ export const createHostel = asyncHandler(async (req, res) => {
         if (menuFile) {
           logger.info(`Uploading menu card for meal plan ${i}`, { userId });
           const uploadResult = await uploadFileWithRetry(menuFile, {
-            folder: "vidyamarg/hostels/menus",
+            folder: "EasyToFind/hostels/menus",
             allowedFormats: ["jpg", "jpeg", "png", "webp"],
           });
 
@@ -501,7 +501,7 @@ export const updateHostel = asyncHandler(async (req, res) => {
       }
 
       const uploadResult = await uploadMultipleFiles(req.files, {
-        folder: "vidyamarg/hostels",
+        folder: "EasyToFind/hostels",
         allowedFormats: ["jpg", "jpeg", "png", "webp"],
       });
 
@@ -530,7 +530,7 @@ export const updateHostel = asyncHandler(async (req, res) => {
 
         if (menuFile) {
           logger.info(`Uploading updated menu card for meal plan ${i}`, { id, userId });
-          
+
           // Delete old menu card if exists
           if (hostel.meal_plans[i] && hostel.meal_plans[i].menu_card && hostel.meal_plans[i].menu_card.publicId) {
             try {
@@ -541,7 +541,7 @@ export const updateHostel = asyncHandler(async (req, res) => {
           }
 
           const uploadResult = await uploadFileWithRetry(menuFile, {
-            folder: "vidyamarg/hostels/menus",
+            folder: "EasyToFind/hostels/menus",
             allowedFormats: ["jpg", "jpeg", "png", "webp"],
           });
 

@@ -76,6 +76,15 @@ const instituteSchema = new mongoose.Schema({
   facilities: facilitySchema,
   academicInfo: academicSchema,
   transparency: transparencySchema,
+  
+  comparisonMetrics: {
+    academicScore: { type: Number, default: 0 },
+    facultyScore: { type: Number, default: 0 },
+    infrastructureScore: { type: Number, default: 0 },
+    transparencyScore: { type: Number, default: 0 },
+    careerOutcomesScore: { type: Number, default: 0 },
+    overallScore: { type: Number, default: 0 }
+  },
 
   courses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'InstituteOwner' },

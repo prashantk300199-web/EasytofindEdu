@@ -143,6 +143,16 @@ const hostelSchema = new mongoose.Schema({
     fire_noc: { type: Boolean, default: false },
     hostel_association_member: { type: Boolean, default: false },
   },
+  comparisonMetrics: {
+    cleanlinessScore: { type: Number, default: 0 },
+    securityScore: { type: Number, default: 0 },
+    foodScore: { type: Number, default: 0 },
+    wifiScore: { type: Number, default: 0 },
+    studyEnvironmentScore: { type: Number, default: 0 },
+    valueForMoney: { type: Number, default: 0 },
+    studentSatisfaction: { type: Number, default: 0 },
+    overallScore: { type: Number, default: 0 }
+  },
   notice_period_days: { type: Number, default: 30, min: 0 },
   status: { type: String, enum: Object.values(HOSTEL_STATUS), default: HOSTEL_STATUS.PENDING },
   is_open: { type: Boolean, default: true },
