@@ -1,14 +1,15 @@
 import careerProgramService from "../services/careerProgram.service.js";
-import  ApiResponse from "../utils/ApiResponse.js";
-import  ApiError  from "../utils/ApiError.js";
+import ApiResponse from "../utils/ApiResponse.js";
+import ApiError from "../utils/ApiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
+// ✅ FIXED: Imported the model at the top using ES Module syntax
+import CareerProgram from "../models/CareerProgram.js";
 
 class AdminCareerProgramController {
   /**
    * Get all programs (admin view - includes drafts/archived)
    * GET /api/v1/admin/careers/programs?status=draft&page=1&limit=20nnn
-   * 
-   * Supports status: "published" | "draft" | "archived" | "all"
+   * * Supports status: "published" | "draft" | "archived" | "all"
    */
   getAllPrograms = asyncHandler(async (req, res) => {
     const { page = 1, limit = 20, status = "published", search = "" } = req.query;
@@ -258,7 +259,7 @@ class AdminCareerProgramController {
    * GET /api/v1/admin/careers/programs/stats
    */
   getProgramStats = asyncHandler(async (req, res) => {
-    const CareerProgram = require("../models/CareerProgram.js").default;
+    // ✅ FIXED: Removed the require statement from here.
 
     const stats = await CareerProgram.aggregate([
       {
