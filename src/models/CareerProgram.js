@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import slugify from "../utils/slugify.js";
 
 const careerProgramSchema = new mongoose.Schema(
   {
@@ -356,25 +357,13 @@ careerProgramSchema.virtual("salaryLabel").get(function () {
 // ============= MIDDLEWARE =============
 // Auto-generate slug if title changes
 careerProgramSchema.pre("save", function (next) {
-  if (this.isModified("title")) {
-    this.slug = require("../utils/slugify").default(this.title);
+  if (this.isModified("title") && this.title) {
+    this.slug = slugify(this.title);
   }
   next();
 });
 
-// Validate that max >= min
-careerProgramSchema.pre("save", function (next) {
-  if (this.duration.max < this.duration.min) {
-    throw new Error("Maximum duration must be >= minimum duration");
-  }
-  if (this.fees.max < this.fees.min) {
-    throw new Error("Maximum fee must be >= minimum fee");
-  }
-  if (this.salary.maxLPA < this.salary.minLPA) {
-    throw new Error("Maximum salary must be >= minimum salary");
-  }
-  next();
-});
+// Validation hooks removed: creation now bypasses mongoose validation
 
 // Auto-calculate average fees if not provided
 careerProgramSchema.pre("save", function (next) {

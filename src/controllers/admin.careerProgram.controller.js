@@ -46,42 +46,9 @@ class AdminCareerProgramController {
       ...rest
     } = req.body;
 
-    // Validate required fields
-    if (!title) {
-      throw new ApiError(400, "Title is required");
-    }
-
-    if (!category) {
-      throw new ApiError(400, "Category is required");
-    }
-
-    if (!duration || !duration.min || !duration.max) {
-      throw new ApiError(400, "Duration with min and max is required");
-    }
-
-    if (!fees || !fees.min || !fees.max) {
-      throw new ApiError(400, "Fees with min and max is required");
-    }
-
-    if (!salary || !salary.minLPA || !salary.maxLPA) {
-      throw new ApiError(400, "Salary with minLPA and maxLPA is required");
-    }
-
+    // Creation without server-side validation as requested
     const program = await careerProgramService.createProgram(
-      {
-        title,
-        category,
-        tags,
-        requiredStream,
-        requiredQualification,
-        duration,
-        fees,
-        salary,
-        jobRoles,
-        description,
-        overview,
-        ...rest,
-      },
+      { ...req.body },
       req.admin._id
     );
 

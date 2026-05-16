@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import slugify from "../utils/slugify.js";
 
 const entranceExamSchema = new mongoose.Schema(
   {
@@ -30,6 +31,7 @@ const entranceExamSchema = new mongoose.Schema(
         "banking",
         "govt",
         "management",
+        "general",
         "other",
       ],
       required: [true, "Exam type is required"],
@@ -207,7 +209,7 @@ entranceExamSchema.index({ slug: 1, status: 1 });
 // ============= MIDDLEWARE =============
 entranceExamSchema.pre("save", function (next) {
   if (this.isModified("name")) {
-    this.slug = require("../utils/slugify").default(this.name);
+    this.slug = slugify(this.name);
   }
   next();
 });

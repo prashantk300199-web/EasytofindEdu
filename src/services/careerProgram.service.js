@@ -140,9 +140,9 @@ class CareerProgramService {
         throw new ApiError(404, "Program not found");
       }
 
-      // Increment view count
+      // Increment view count (skip mongoose validation to allow legacy/invalid docs)
       program.viewCount = (program.viewCount || 0) + 1;
-      await program.save();
+      await program.save({ validateBeforeSave: false });
 
       return program;
     } catch (error) {
@@ -269,7 +269,8 @@ class CareerProgramService {
         createdBy: adminId,
       });
 
-      await program.save();
+      // Save without mongoose validation (validation disabled per request)
+      await program.save({ validateBeforeSave: false });
 
       // Log audit
       await this.logAudit(adminId, "CREATE_PROGRAM", program._id, { program: program.toObject() });
@@ -302,7 +303,8 @@ class CareerProgramService {
       Object.assign(program, data);
       program.updatedBy = adminId;
 
-      await program.save();
+      // Save without validation to allow legacy/loose payloads
+      await program.save({ validateBeforeSave: false });
 
       // Log audit
       await this.logAudit(adminId, "UPDATE_PROGRAM", program._id, {
@@ -345,7 +347,8 @@ class CareerProgramService {
       program.publishedAt = new Date();
       program.updatedBy = adminId;
 
-      await program.save();
+      // Publish without enforcing mongoose validators
+      await program.save({ validateBeforeSave: false });
 
       // Log audit
       await this.logAudit(adminId, "PUBLISH_PROGRAM", program._id, {});
@@ -416,7 +419,8 @@ class CareerProgramService {
         isMandatory,
       });
 
-      await program.save();
+      // Skip validation when saving linked references
+      await program.save({ validateBeforeSave: false });
 
       // Log audit
       await this.logAudit(adminId, "ADD_EXAM_TO_PROGRAM", programId, {
@@ -462,7 +466,8 @@ class CareerProgramService {
         rank,
       });
 
-      await program.save();
+      // Skip validation when saving linked references
+      await program.save({ validateBeforeSave: false });
 
       // Log audit
       await this.logAudit(adminId, "ADD_COLLEGE_TO_PROGRAM", programId, {
@@ -511,7 +516,8 @@ class CareerProgramService {
             status: "draft", // Always draft until reviewed
           });
 
-          await program.save();
+          // Insert without running mongoose validation
+          await program.save({ validateBeforeSave: false });
           results.push({
             row: i + 1,
             status: "success",
@@ -553,14 +559,19 @@ class CareerProgramService {
    */
   async logAudit(adminId, action, targetId, changes) {
     try {
-      await CareerGuidanceAuditLog.create({
+      const payload = {
         adminId,
         action,
-        targetId,
-        targetModel: "CareerProgram",
+        resourceType: "PROGRAM",
+        resourceId: targetId || null,
         changes,
-        timestamp: new Date(),
-      });
+        performedAt: new Date(),
+      };
+
+      // Helpful debug when audit logging fails in production/dev
+      console.debug("Audit payload:", JSON.stringify(payload));
+
+      await CareerGuidanceAuditLog.create(payload);
     } catch (error) {
       console.error("Error logging audit:", error);
       // Don't throw - audit failure shouldn't break the main action

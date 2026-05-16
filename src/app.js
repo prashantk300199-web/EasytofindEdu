@@ -38,6 +38,8 @@ import referenceRoutes from "./routes/reference.routes.js";
 import cgRoutes from "./routes/cg.routes.js";
 import compareRoutes from "./routes/compare.routes.js";
 import blogRoutes from "./routes/blog.routes.js";
+import collegeCourseRoutes from "./routes/collegeCourse.routes.js";
+import collegeRoutes from "./routes/college.routes.js";
 
 import ApiResponse from "./utils/ApiResponse.js";
 
@@ -144,7 +146,8 @@ app.use("/api/v1/inquiries", inquiryRoutes);
 app.use("/api/v1/references", referenceRoutes);
 app.use("/api/v1/compare", compareRoutes);
 app.use("/api/v1/blogs", blogRoutes);
-
+app.use("/api/v1/college-courses", collegeCourseRoutes);
+app.use("/api/v1/collegeS", collegeRoutes);
 app.use("/api/v1/careers", careerProgramPublicRoutes);
 app.use("/api/v1/admin/careers", careerProgramAdminRoutes);
 app.use("/api/v1/career-guidance", careerGuidancePublicRoutes);

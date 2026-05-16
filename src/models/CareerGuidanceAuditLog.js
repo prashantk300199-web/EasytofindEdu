@@ -15,6 +15,16 @@ const careerGuidanceAuditLogSchema = new mongoose.Schema(
         "BULK_IMPORT",
         "FEATURE_NODE",
         "UNFEATURE_NODE",
+        // Program-related actions
+        "CREATE_PROGRAM",
+        "UPDATE_PROGRAM",
+        "PUBLISH_PROGRAM",
+        "ARCHIVE_PROGRAM",
+        "ADD_EXAM_TO_PROGRAM",
+        "ADD_COLLEGE_TO_PROGRAM",
+        "BULK_IMPORT_PROGRAMS",
+        // Fallback for unknown actions
+        "UNKNOWN",
       ],
       index: true,
     },
@@ -30,7 +40,7 @@ const careerGuidanceAuditLogSchema = new mongoose.Schema(
     // Resource Info
     resourceType: {
       type: String,
-      enum: ["QUESTION", "NODE"],
+      enum: ["QUESTION", "NODE", "PROGRAM"],
       required: true,
     },
     resourceId: {
@@ -75,6 +85,37 @@ const careerGuidanceAuditLogSchema = new mongoose.Schema(
 
 // TTL Index - Keep logs for 1 year then delete
 careerGuidanceAuditLogSchema.index({ performedAt: 1 }, { expireAfterSeconds: 31536000 });
+
+// Backwards-compatibility: map legacy payload fields to the new schema before validation
+careerGuidanceAuditLogSchema.pre("validate", function (next) {
+  try {
+    // If older code passed `targetModel` / `targetId`, map them to `resourceType` / `resourceId`
+    const doc = this._doc || this;
+
+    if (!this.resourceType && doc.targetModel) {
+      const map = {
+        CareerProgram: "PROGRAM",
+        CareerPathNode: "NODE",
+        CareerGuidanceQuestions: "QUESTION",
+      };
+      this.resourceType = map[doc.targetModel] || doc.targetModel || this.resourceType;
+    }
+
+    if (!this.resourceId && doc.targetId) {
+      this.resourceId = doc.targetId;
+    }
+
+    // If action is not one of the allowed enum values, set to UNKNOWN to avoid validation failure
+    const allowed = careerGuidanceAuditLogSchema.path("action").enumValues || [];
+    if (this.action && !allowed.includes(this.action)) {
+      this.action = "UNKNOWN";
+    }
+  } catch (err) {
+    // ignore mapping errors and let validation handle them
+  }
+
+  next();
+});
 
 const CareerGuidanceAuditLog = mongoose.model(
   "CareerGuidanceAuditLog",
