@@ -122,24 +122,51 @@ export const updateCollege = async (req, res) => {
   try {
     const cleanData = sanitizePayload(req.body);
 
-    const college = await CollegeProfile.findByIdAndUpdate(
-      req.params.id, 
-      cleanData, 
-      { new: true, runValidators: true }
-    );
-    
-    if (!college) {
-      return res.status(404).json({ success: false, message: "College not found" });
+    // 🔥 FIX COURSE OBJECT ISSUE
+    if (cleanData.coursesOffered) {
+      cleanData.coursesOffered =
+        cleanData.coursesOffered.map((item) => ({
+          ...item,
+
+          course:
+            typeof item.course === "object"
+              ? item.course._id
+              : item.course,
+        }));
     }
 
-    res.status(200).json({ 
-      success: true, 
-      message: "College updated successfully", 
-      data: college 
+    const college =
+      await CollegeProfile.findByIdAndUpdate(
+        req.params.id,
+        cleanData,
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+
+    if (!college) {
+      return res.status(404).json({
+        success: false,
+        message: "College not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "College updated successfully",
+      data: college,
     });
   } catch (error) {
-    console.error("UPDATE ERROR:", error.message);
-    res.status(500).json({ success: false, message: error.message });
+    console.error(
+      "UPDATE ERROR:",
+      error.message
+    );
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 

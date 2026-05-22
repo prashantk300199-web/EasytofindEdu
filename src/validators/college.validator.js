@@ -1,9 +1,10 @@
-// src/validators/college.validator.js
-
 import Joi from "joi";
 
 export const collegeValidationSchema = Joi.object({
-  // Basic Details
+  // ==========================================
+  // BASIC DETAILS
+  // ==========================================
+
   name: Joi.string().required().messages({
     "string.empty": "College Name is strictly required",
   }),
@@ -20,7 +21,10 @@ export const collegeValidationSchema = Joi.object({
 
   videoUrl: Joi.string().allow("", null).optional(),
 
-  establishedYear: Joi.number().allow("", null).optional(),
+  establishedYear: Joi.number()
+    .empty("")
+    .allow(null)
+    .optional(),
 
   ownershipType: Joi.string()
     .valid("Public", "Private", "PPP", "Government")
@@ -32,117 +36,241 @@ export const collegeValidationSchema = Joi.object({
     .allow("", null)
     .optional(),
 
-  affiliatedUniversity: Joi.string().allow("", null).optional(),
+  affiliatedUniversity: Joi.string()
+    .allow("", null)
+    .optional(),
 
-  campusSize: Joi.string().allow("", null).optional(),
+  campusSize: Joi.string()
+    .allow("", null)
+    .optional(),
 
-  collegeType: Joi.string().allow("", null).optional(),
+  collegeType: Joi.string()
+    .allow("", null)
+    .optional(),
 
-  // Rankings
-  approvedBy: Joi.array().items(Joi.string()).optional(),
+  // ==========================================
+  // APPROVALS & RANKINGS
+  // ==========================================
 
-  accreditation: Joi.array().items(Joi.string()).optional(),
+  approvedBy: Joi.array()
+    .items(Joi.string())
+    .optional(),
 
-  naacGrade: Joi.string().allow("", null).optional(),
+  accreditation: Joi.array()
+    .items(Joi.string())
+    .optional(),
+
+  naacGrade: Joi.string()
+    .allow("", null)
+    .optional(),
 
   rankings: Joi.object({
-    nirf: Joi.number().allow("", null).optional(),
-    iirf: Joi.number().allow("", null).optional(),
-    qs: Joi.number().allow("", null).optional(),
+    nirf: Joi.number()
+      .empty("")
+      .allow(null)
+      .optional(),
+
+    iirf: Joi.number()
+      .empty("")
+      .allow(null)
+      .optional(),
+
+    qs: Joi.number()
+      .empty("")
+      .allow(null)
+      .optional(),
   }).optional(),
 
-  // Contact
-  contact: Joi.object({
-    website: Joi.string().allow("", null).optional(),
+  // ==========================================
+  // CONTACT
+  // ==========================================
 
-    email: Joi.string().email().allow("", null).optional(),
+  contact: Joi.object({
+    website: Joi.string()
+      .allow("", null)
+      .optional(),
+
+    email: Joi.string()
+      .email()
+      .allow("", null)
+      .optional(),
 
     address: Joi.string().required().messages({
-      "string.empty": "Full Address is required in Contact Details",
+      "string.empty":
+        "Full Address is required in Contact Details",
     }),
   }).required(),
 
-  // Admission
+  // ==========================================
+  // ADMISSION
+  // ==========================================
+
   admission: Joi.object({
-    process: Joi.string().allow("", null).optional(),
+    process: Joi.string()
+      .allow("", null)
+      .optional(),
 
     quotas: Joi.object({
-      directAdmissionAvailable: Joi.boolean().default(false),
+      directAdmissionAvailable:
+        Joi.boolean().default(false),
 
-      managementQuota: Joi.boolean().default(false),
+      managementQuota:
+        Joi.boolean().default(false),
 
-      nriQuota: Joi.boolean().default(false),
+      nriQuota:
+        Joi.boolean().default(false),
 
-      stateQuota: Joi.boolean().default(false),
+      stateQuota:
+        Joi.boolean().default(false),
 
-      aiqQuota: Joi.boolean().default(false),
+      aiqQuota:
+        Joi.boolean().default(false),
 
-      scholarshipAdmission: Joi.boolean().default(false),
+      scholarshipAdmission:
+        Joi.boolean().default(false),
     }).optional(),
   }).optional(),
 
-  // Placements
+  // ==========================================
+  // PLACEMENTS
+  // ==========================================
+
   placements: Joi.object({
-    placementPercentage: Joi.number().allow("", null).optional(),
+    placementPercentage: Joi.number()
+      .empty("")
+      .allow(null)
+      .optional(),
 
-    internshipPercentage: Joi.number().allow("", null).optional(),
+    internshipPercentage: Joi.number()
+      .empty("")
+      .allow(null)
+      .optional(),
 
-    eligibleStudents: Joi.number().allow("", null).optional(),
+    eligibleStudents: Joi.number()
+      .empty("")
+      .allow(null)
+      .optional(),
 
-    studentsPlaced: Joi.number().allow("", null).optional(),
+    studentsPlaced: Joi.number()
+      .empty("")
+      .allow(null)
+      .optional(),
 
-    highestPackage: Joi.number().allow("", null).optional(),
+    highestPackage: Joi.number()
+      .empty("")
+      .allow(null)
+      .optional(),
 
-    averagePackage: Joi.number().allow("", null).optional(),
+    averagePackage: Joi.number()
+      .empty("")
+      .allow(null)
+      .optional(),
 
-    internationalPackage: Joi.number().allow("", null).optional(),
+    internationalPackage: Joi.number()
+      .empty("")
+      .allow(null)
+      .optional(),
 
-    topRecruiters: Joi.array().items(Joi.string()).optional(),
+    topRecruiters: Joi.array()
+      .items(Joi.string())
+      .optional(),
   }).optional(),
 
-  // Hostel
+  // ==========================================
+  // HOSTEL
+  // ==========================================
+
   hostel: Joi.object({
-    isAvailable: Joi.boolean().default(false),
+    isAvailable:
+      Joi.boolean().default(false),
 
-    monthlyFee: Joi.number().allow("", null).optional(),
+    monthlyFee: Joi.number()
+      .empty("")
+      .allow(null)
+      .optional(),
 
-    yearlyFee: Joi.number().allow("", null).optional(),
+    yearlyFee: Joi.number()
+      .empty("")
+      .allow(null)
+      .optional(),
 
-    foodIncluded: Joi.boolean().default(false),
+    foodIncluded:
+      Joi.boolean().default(false),
 
-    otherFees: Joi.number().allow("", null).optional(),
+    otherFees: Joi.number()
+      .empty("")
+      .allow(null)
+      .optional(),
   }).optional(),
 
-  // Courses Offered
+  // ==========================================
+  // COURSES OFFERED
+  // ==========================================
+
   coursesOffered: Joi.array().items(
     Joi.object({
-      course: Joi.string().required().messages({
-        "string.empty": "Master Course selection is required",
-      }),
+      // 🔥 FIXED COURSE FIELD
+      course: Joi.alternatives()
+        .try(
+          Joi.string(),
 
-      // EXAM VALIDATION REMOVED
-      // Now any exam name/string is allowed
+          Joi.object({
+            _id: Joi.string().required(),
+          })
+        )
+        .required()
+        .messages({
+          "any.required":
+            "Master Course selection is required",
+        }),
+
       examsAccepted: Joi.array()
-        .items(Joi.string().allow("", null))
+        .items(
+          Joi.string().allow("", null)
+        )
         .optional(),
 
       fees: Joi.object({
-        tuitionFee: Joi.number().required().messages({
-          "number.base": "Tuition fee must be a number",
-        }),
+        tuitionFee: Joi.number()
+          .empty("")
+          .required()
+          .messages({
+            "number.base":
+              "Tuition fee must be a number",
+            "any.required":
+              "Tuition fee is required",
+          }),
 
-        totalYearlyExpense: Joi.number().required(),
+        totalYearlyExpense: Joi.number()
+          .empty("")
+          .required()
+          .messages({
+            "number.base":
+              "Total yearly expense must be a number",
+            "any.required":
+              "Total yearly expense is required",
+          }),
 
-        examFee: Joi.number().default(0),
+        examFee: Joi.number()
+          .empty("")
+          .default(0),
 
-        securityFee: Joi.number().default(0),
+        securityFee: Joi.number()
+          .empty("")
+          .default(0),
 
-        developmentFee: Joi.number().default(0),
+        developmentFee: Joi.number()
+          .empty("")
+          .default(0),
 
-        uniformLabCharges: Joi.number().default(0),
+        uniformLabCharges: Joi.number()
+          .empty("")
+          .default(0),
 
-        otherFees: Joi.number().default(0),
+        otherFees: Joi.number()
+          .empty("")
+          .default(0),
       }).required(),
     })
   ).optional(),
-});
+}).unknown(true);
