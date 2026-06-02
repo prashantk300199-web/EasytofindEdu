@@ -25,9 +25,13 @@ const facilitySchema = new mongoose.Schema({
 
 const locationSchema = new mongoose.Schema({
   state: { type: String, default: "Bihar" },
+  // Support either a DB reference (ObjectId) or a plain name string when city/area/subarea
   city: { type: mongoose.Schema.Types.ObjectId, ref: 'City' },
+  cityName: { type: String },
   area: { type: mongoose.Schema.Types.ObjectId, ref: 'Area' },
+  areaName: { type: String },
   subarea: { type: mongoose.Schema.Types.ObjectId, ref: 'SubArea' },
+  subareaName: { type: String },
   fullAddress: String,
   landmark: String,
   distanceFromLandmarks: [{

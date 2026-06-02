@@ -13,9 +13,10 @@ export const createInstituteValidator = Joi.object({
   location: Joi.alternatives().try(
     Joi.object({
       state: Joi.string().default("Bihar"),
-      city: Joi.string().hex().length(24).required(),
-      area: Joi.string().hex().length(24).required(),
-      subarea: Joi.string().hex().length(24).required(),
+      // Accept either ObjectId (24-hex) or a plain city/area/subarea name
+      city: Joi.alternatives().try(Joi.string().hex().length(24), Joi.string()).required(),
+      area: Joi.alternatives().try(Joi.string().hex().length(24), Joi.string()).required(),
+      subarea: Joi.alternatives().try(Joi.string().hex().length(24), Joi.string()).required(),
       fullAddress: Joi.string().required(),
       landmark: Joi.string()
     }),

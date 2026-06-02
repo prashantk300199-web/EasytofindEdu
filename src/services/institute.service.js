@@ -8,6 +8,7 @@ import Area from '../models/Area.js';
 import SubArea from '../models/SubArea.js';
 import ApiError from '../utils/ApiError.js';
 import asyncHandler from '../utils/asyncHandler.js';
+import { INDIA_CITIES } from '../constants/india.cities.js';
 
 
 // In services/institute.service.js - Update extractImageData function
@@ -37,13 +38,37 @@ const paginate = (query, page = 1, limit = 10) => {
   const skip = (page - 1) * limit;
   return query.skip(skip).limit(parseInt(limit));
 };
+// Helper to detect ObjectId-like strings
+const isObjectIdString = (val) => typeof val === 'string' && /^[0-9a-fA-F]{24}$/.test(val);
+
+// Normalize location object: move plain string city/area/subarea into cityName/areaName/subareaName
+const normalizeLocation = (loc) => {
+  if (!loc || typeof loc !== 'object') return loc;
+  ['city', 'area', 'subarea'].forEach(field => {
+    if (loc[field] && typeof loc[field] === 'string' && !isObjectIdString(loc[field])) {
+      loc[`${field}Name`] = loc[field];
+      delete loc[field];
+    }
+  });
+  return loc;
+};
 
 const buildFilterQuery = (filters) => {
   console.log('📍 buildFilterQuery called with filters:', filters);
   const query = {};
 
-  if (filters.city) query['location.city'] = filters.city;
-  if (filters.area) query['location.area'] = filters.area;
+  if (filters.city) {
+    if (isObjectIdString(filters.city)) query['location.city'] = filters.city;
+    else query['location.cityName'] = filters.city;
+  }
+  if (filters.area) {
+    if (isObjectIdString(filters.area)) query['location.area'] = filters.area;
+    else query['location.areaName'] = filters.area;
+  }
+  if (filters.subarea) {
+    if (isObjectIdString(filters.subarea)) query['location.subarea'] = filters.subarea;
+    else query['location.subareaName'] = filters.subarea;
+  }
   if (filters.course) query.courses = filters.course;
   if (filters.mode) query['batches.mode'] = filters.mode;
   if (filters.scholarshipAvailable) query['feeStructures.scholarshipAvailable'] = filters.scholarshipAvailable === 'true';
@@ -91,6 +116,11 @@ export const createInstituteService = async (data, userId, files) => {
     }
   } catch (parseError) {
     console.error('📍 Error parsing JSON strings:', parseError);
+  }
+
+  // Normalize location so plain names are stored in cityName/areaName/subareaName
+  if (parsedData.location && typeof parsedData.location === 'object') {
+    parsedData.location = normalizeLocation(parsedData.location);
   }
 
   console.log('📍 Parsed data:', parsedData);
@@ -219,6 +249,9 @@ export const updateInstituteService = async (id, data, userId, files) => {
     if (data[field] && typeof data[field] === 'object') {
       const current = institute[field] ? (institute[field].toObject ? institute[field].toObject() : institute[field]) : {};
       institute[field] = { ...current, ...data[field] };
+      if (field === 'location') {
+        institute[field] = normalizeLocation(institute[field]);
+      }
       delete data[field]; // Remove from data so it doesn't get overwritten by basic assignment
     }
   });
@@ -666,6 +699,12 @@ export const getCitiesService = async () => {  // Remove asyncHandler wrapper
   try {
     const cities = await City.find().select('name');
     console.log('📍 Cities fetched:', cities.length);
+
+    if (!cities || cities.length === 0) {
+      console.log('📍 No cities in DB — falling back to INDIA_CITIES constant');
+      return INDIA_CITIES.map(c => ({ name: c.name }));
+    }
+
     return cities;
   } catch (error) {
     console.error('📍 Error in getCitiesService:', error);
@@ -1125,8 +1164,14 @@ export const adminGetInstitutesService = async (filters = {}, page = 1, limit = 
   const query = {};
   if (filters.isApproved !== undefined) query.isApproved = filters.isApproved === 'true';
   if (filters.isActive !== undefined) query.isActive = filters.isActive === 'true';
-  if (filters.city) query['location.city'] = filters.city;
-  if (filters.area) query['location.area'] = filters.area;
+  if (filters.city) {
+    if (isObjectIdString(filters.city)) query['location.city'] = filters.city;
+    else query['location.cityName'] = filters.city;
+  }
+  if (filters.area) {
+    if (isObjectIdString(filters.area)) query['location.area'] = filters.area;
+    else query['location.areaName'] = filters.area;
+  }
 
   const institutes = await paginate(
     Institute.find(query).sort(sortBy).populate(['location.city', 'location.area', 'location.subarea', 'createdBy']),
