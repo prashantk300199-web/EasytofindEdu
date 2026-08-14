@@ -9,6 +9,7 @@ import env from "./config/env.js";
 import errorHandler from "./middlewares/errorHandler.js";
 import { requestLogger, securityHeaders, validateRequestSize } from "./middlewares/requestLogger.js";
 import authRoutes from "./routes/auth.routes.js";
+import googleAuthRoutes from "./routes/google.auth.routes.js";
 import ownerRoutes from "./routes/owner.routes.js";
 import hostelRoutes from "./routes/hostel.routes.js";
 import offerRoutes from "./routes/offer.routes.js";
@@ -121,6 +122,7 @@ app.get("/api/v1/health", (req, res) => {
 
 // API Routes (Protected)
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/auth", googleAuthRoutes);  // POST /api/v1/auth/google
 // NOTE: /api/v1/owner/institutes must be registered BEFORE /api/v1/owner
 // otherwise the hostel-owner authenticateOwner middleware runs first on all /owner/* paths
 app.use("/api/v1/owner/institutes", ownerInstituteRoutes);
