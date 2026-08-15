@@ -65,6 +65,7 @@ export const googleLogin = asyncHandler(async (req, res) => {
     const token = jwt.sign({ id: student._id, role: 'student' }, env.jwt.secret, { expiresIn: env.jwt.expiresIn });
     res.cookie('studentToken', token, COOKIE_OPTIONS);
     return res.status(200).json(new ApiResponse(200, 'Google login successful.', {
+      token,
       user: { _id: student._id, name: student.name, email: student.email },
       role: 'student',
     }));
@@ -86,6 +87,7 @@ export const googleLogin = asyncHandler(async (req, res) => {
     const token = jwt.sign({ id: owner._id, role: 'owner' }, env.jwt.secret, { expiresIn: env.jwt.expiresIn });
     res.cookie('token', token, COOKIE_OPTIONS);
     return res.status(200).json(new ApiResponse(200, 'Google login successful.', {
+      token,
       user: { _id: owner._id, name: owner.name, email: owner.email },
       role: 'owner',
     }));
@@ -107,6 +109,7 @@ export const googleLogin = asyncHandler(async (req, res) => {
   const token = jwt.sign({ id: owner._id, role: 'institute_owner' }, env.jwt.secret, { expiresIn: env.jwt.expiresIn });
   res.cookie('instituteOwnerToken', token, COOKIE_OPTIONS);
   return res.status(200).json(new ApiResponse(200, 'Google login successful.', {
+    token,
     user: { _id: owner._id, name: owner.name, email: owner.email },
     role: 'institute_owner',
   }));
