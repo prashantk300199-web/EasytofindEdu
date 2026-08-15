@@ -203,14 +203,19 @@ export const createHostelSchema = Joi.object({
 
   /* ----------------------------- Security ------------------------------- */
 
-  security: Joi.object({
-    full_time_warden: joiBoolean.default(false),
-    cctv: joiBoolean.default(false),
-    security_guard_24x7: joiBoolean.default(false),
-    biometric_entry: joiBoolean.default(false),
-    visitor_register: joiBoolean.default(false),
-    first_aid_kit: joiBoolean.default(false),
-  }).default({}),
+  security: Joi.alternatives()
+    .try(
+      Joi.object({
+        full_time_warden: joiBoolean.default(false),
+        cctv: joiBoolean.default(false),
+        security_guard_24x7: joiBoolean.default(false),
+        biometric_entry: joiBoolean.default(false),
+        visitor_register: joiBoolean.default(false),
+        first_aid_kit: joiBoolean.default(false),
+      }),
+      Joi.string().custom(parseJSON)
+    )
+    .default({}),
 
   /* --------------------------- Washroom -------------------------------- */
 
@@ -224,59 +229,62 @@ export const createHostelSchema = Joi.object({
 
   /* ----------------------------- Rules ---------------------------------- */
 
-  rules: Joi.object({
-    gate_close_time: Joi.string().default("22:00"),
-    late_entry_allowed: joiBoolean.default(false),
-    smoking_allowed: joiBoolean.default(false),
-    alcohol_allowed: joiBoolean.default(false),
-
-    guest_policy: Joi.string()
-      .valid(
-        "family_only",
-        "friends_only",
-        "both_allowed",
-        "no_one_allowed"
-      )
-      .default("family_only"),
-
-    pets_allowed: joiBoolean.default(false),
-
-    custom_rules: Joi.array().items(Joi.string().trim()).default([]),
-  }).default({}),
+  rules: Joi.alternatives().try(
+    Joi.object({
+      gate_close_time: Joi.string().default("22:00"),
+      late_entry_allowed: joiBoolean.default(false),
+      smoking_allowed: joiBoolean.default(false),
+      alcohol_allowed: joiBoolean.default(false),
+      guest_policy: Joi.string().valid("family_only","friends_only","both_allowed","no_one_allowed").default("family_only"),
+      pets_allowed: joiBoolean.default(false),
+      custom_rules: Joi.array().items(Joi.string().trim()).default([]),
+    }),
+    Joi.string().custom(parseJSON)
+  ).default({}),
 
   /* ------------------------ Building & Legal ---------------------------- */
 
-  building_details: Joi.object({
-    building_age_years: joiNumber.min(0).default(0),
-    flooring_type: Joi.string()
-      .valid("tiles", "marble", "granite", "mosaic")
-      .default("tiles"),
-    number_of_floors: joiNumber.min(1).default(1),
-  }).default({}),
+  building_details: Joi.alternatives().try(
+    Joi.object({
+      building_age_years: joiNumber.min(0).default(0),
+      flooring_type: Joi.string().valid("tiles","marble","granite","mosaic").default("tiles"),
+      number_of_floors: joiNumber.min(1).default(1),
+    }),
+    Joi.string().custom(parseJSON)
+  ).default({}),
 
-  legal_docs: Joi.object({
-    hostel_registration: joiBoolean.default(false),
-    form_3: joiBoolean.default(false),
-    food_license: joiBoolean.default(false),
-    character_certificate: joiBoolean.default(false),
-    trade_license: joiBoolean.default(false),
-    fire_noc: joiBoolean.default(false),
-    hostel_association_member: joiBoolean.default(false),
-  }).default({}),
+  legal_docs: Joi.alternatives().try(
+    Joi.object({
+      hostel_registration: joiBoolean.default(false),
+      form_3: joiBoolean.default(false),
+      food_license: joiBoolean.default(false),
+      character_certificate: joiBoolean.default(false),
+      trade_license: joiBoolean.default(false),
+      fire_noc: joiBoolean.default(false),
+      hostel_association_member: joiBoolean.default(false),
+    }),
+    Joi.string().custom(parseJSON)
+  ).default({}),
 
   /* ------------------------ Nearby Distances ---------------------------- */
-  nearby_distances: Joi.object({
-    institutes: Joi.array().items(distanceItemSchema).default([]),
-    landmarks: Joi.array().items(distanceItemSchema).default([]),
-  }).default({}),
+  nearby_distances: Joi.alternatives().try(
+    Joi.object({
+      institutes: Joi.array().items(distanceItemSchema).default([]),
+      landmarks: Joi.array().items(distanceItemSchema).default([]),
+    }),
+    Joi.string().custom(parseJSON)
+  ).default({}),
 
   /* --------------------------- Warden ----------------------------------- */
-  warden: Joi.object({
-    name: Joi.string().trim().allow("").empty(""),
-    gender: Joi.string().valid("male", "female", "other").allow("").empty(""),
-    age: joiNumber.min(18).allow(null, "").empty(""),
-    contact_number: Joi.string().trim().allow("").empty(""),
-  }).default({}),
+  warden: Joi.alternatives().try(
+    Joi.object({
+      name: Joi.string().trim().allow("").empty(""),
+      gender: Joi.string().valid("male","female","other").allow("").empty(""),
+      age: joiNumber.min(18).allow(null,"").empty(""),
+      contact_number: Joi.string().trim().allow("").empty(""),
+    }),
+    Joi.string().custom(parseJSON)
+  ).default({}),
 
   /* --------------------------- Others ----------------------------------- */
   total_hostel_beds: joiNumber.integer().min(0).default(0),
