@@ -181,12 +181,18 @@ export const createHostelSchema = Joi.object({
 
   /* ---------------------------- Amenities ------------------------------- */
 
-  in_room_amenities: Joi.array()
-    .items(Joi.string().valid(...AMENITY_KEYS))
+  in_room_amenities: Joi.alternatives()
+    .try(
+      Joi.array().items(Joi.string().valid(...AMENITY_KEYS)),
+      Joi.string().custom(parseJSON)
+    )
     .default([]),
 
-  common_amenities: Joi.array()
-    .items(Joi.string().valid(...AMENITY_KEYS))
+  common_amenities: Joi.alternatives()
+    .try(
+      Joi.array().items(Joi.string().valid(...AMENITY_KEYS)),
+      Joi.string().custom(parseJSON)
+    )
     .default([]),
 
   recreation: Joi.array()
