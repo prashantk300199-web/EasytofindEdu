@@ -149,4 +149,4 @@ npm run dev             # Start development server
 
 ## Tech Stack
 
-Node.js, Express, MongoDB, Mongoose, JWT, Nodemailer (Gmail SMTP), Cloudinary, Multer, Joi, Slugify
+Node.js, Express, MongoDB, Mongoose, JWT, Nodemailer (Gmail SMTP), Cloudinary, Multer, Joi, Slugify# Backend redeployment trigger - Sun Sep  6 00:19:51 IST 2026
