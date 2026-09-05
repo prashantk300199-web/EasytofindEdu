@@ -16,8 +16,10 @@ import Step11Career from '../components/institute-registration/Step11Career';
 import Step12Results from '../components/institute-registration/Step12Results';
 import Step13Gallery from '../components/institute-registration/Step13Gallery';
 import Step14Verification from '../components/institute-registration/Step14Verification';
+import ReviewAndSubmit from '../components/institute-registration/ReviewAndSubmit';
 
 const TOTAL_STEPS = 14;
+const REVIEW_STEP = 15;
 
 // Map step numbers to backend field names
 const getStepFieldName = (step: number): string => {
@@ -144,6 +146,10 @@ export default function InstituteRegistration() {
       if (currentStep < TOTAL_STEPS) {
         setCurrentStep(prev => prev + 1);
         window.scrollTo(0, 0);
+      } else if (currentStep === TOTAL_STEPS) {
+        // After step 14, go to review
+        setCurrentStep(REVIEW_STEP);
+        window.scrollTo(0, 0);
       }
     } catch (err) {
       console.error('Failed to save and proceed:', err);
@@ -170,6 +176,46 @@ export default function InstituteRegistration() {
       alert('Draft saved successfully!');
     } catch (err) {
       console.error('Failed to save draft:', err);
+    }
+  };
+
+  const handleEditFromReview = (step: number) => {
+    setCurrentStep(step);
+    window.scrollTo(0, 0);
+  };
+
+  const handleSubmitForVerification = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+
+      const token = getToken();
+      const res = await fetch('https://easytofindedu.onrender.com/api/v1/owner/institutes/draft/submit', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to submit institute');
+      }
+
+      const data = await res.json();
+
+      // Show success message
+      alert('Institute submitted successfully! Your institute will be reviewed by our team.');
+
+      // Redirect to dashboard
+      navigate('/dashboard');
+    } catch (err: any) {
+      setError(err.message);
+      alert(`Submission failed: ${err.message}`);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -390,7 +436,15 @@ export default function InstituteRegistration() {
               loading={saving}
             />
           )}
-          {currentStep > 14 && (
+          {currentStep === REVIEW_STEP && (
+            <ReviewAndSubmit
+              formData={formData}
+              onEdit={handleEditFromReview}
+              onSubmit={handleSubmitForVerification}
+              loading={saving}
+            />
+          )}
+          {currentStep > REVIEW_STEP && (
             <div className="bg-white p-8 rounded-lg shadow text-center">
               <h3 className="text-xl font-semibold mb-4">Step {currentStep} - Coming Soon</h3>
               <p className="text-gray-600 mb-6">This step is under development.</p>
