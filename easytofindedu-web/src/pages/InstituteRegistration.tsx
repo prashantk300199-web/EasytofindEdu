@@ -42,6 +42,27 @@ const getStepFieldName = (step: number): string => {
   return fieldNames[step] || '';
 };
 
+// Map step numbers to backend field names
+const getStepFieldName = (step: number): string => {
+  const fieldNames: { [key: number]: string } = {
+    1: 'InstituteInfo',
+    2: 'Category',
+    3: 'LocationContact',
+    4: 'Courses',
+    5: 'Batches',
+    6: 'LearningExperience',
+    7: 'Facilities',
+    8: 'Faculty',
+    9: 'Fees',
+    10: 'Admission',
+    11: 'Career',
+    12: 'Results',
+    13: 'Gallery',
+    14: 'Verification'
+  };
+  return fieldNames[step] || '';
+};
+
 interface DraftData {
   step1?: any;
   step2?: any;
