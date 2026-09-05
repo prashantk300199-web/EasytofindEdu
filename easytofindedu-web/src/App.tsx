@@ -36,7 +36,7 @@ function ScrollToTop() {
 const HERO_ROUTES = ['/hostels', '/institutes', '/colleges', '/journal', '/abroad', '/online-courses'];
 // Pages with their own full-screen layout — no navbar/footer.
 const STANDALONE_ROUTES = ['/login'];
-const DASHBOARD_ROUTES_PREFIX = ['/dashboard', '/hostel-dashboard', '/institute-dashboard', '/institute-registration', '/admin'];
+const DASHBOARD_ROUTES_PREFIX = ['/dashboard', '/hostel-dashboard', '/institute-dashboard', '/institute-registration', '/institute-owner', '/admin'];
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -53,6 +53,7 @@ function AnimatedRoutes() {
         <Route path="/hostel-dashboard/*" element={<OwnerDashboard />} />
         <Route path="/institute-dashboard" element={<InstituteOwnerDashboard />} />
         <Route path="/institute-registration" element={<InstituteRegistration />} />
+        <Route path="/institute-owner/register" element={<InstituteRegistration />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
       </Routes>
     );
