@@ -37,10 +37,10 @@ export default function Step1InstituteInfo({ data, onNext, onSaveDraft, loading 
     establishedYear: data?.establishedYear || '',
     ownershipType: data?.ownershipType || '',
     numberOfBranches: data?.numberOfBranches || 1,
-    logoFile: null as File | null,
-    coverImageFile: null as File | null,
-    logoPreview: data?.logo?.url || '',
-    coverImagePreview: data?.coverImage?.url || ''
+    logoFile: data?.logoFile || '',
+    coverImageFile: data?.coverImageFile || '',
+    logoPreview: data?.logoPreview || '',
+    coverImagePreview: data?.coverImagePreview || ''
   });
 
   const [errors, setErrors] = useState<any>({});
@@ -57,7 +57,7 @@ export default function Step1InstituteInfo({ data, onNext, onSaveDraft, loading 
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'coverImage') => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'coverImage') => {
     const file = e.target.files?.[0];
     if (file) {
       // Validate file size (5MB max)
@@ -79,16 +79,16 @@ export default function Step1InstituteInfo({ data, onNext, onSaveDraft, loading 
       }
 
       const previewUrl = URL.createObjectURL(file);
+
+      // Set preview immediately for better UX
       if (type === 'logo') {
         setFormData(prev => ({
           ...prev,
-          logoFile: file,
           logoPreview: previewUrl
         }));
       } else {
         setFormData(prev => ({
           ...prev,
-          coverImageFile: file,
           coverImagePreview: previewUrl
         }));
       }
@@ -97,6 +97,53 @@ export default function Step1InstituteInfo({ data, onNext, onSaveDraft, loading 
       if (errors[type]) {
         setErrors((prev: any) => ({ ...prev, [type]: '' }));
       }
+
+      // Upload file immediately to get URL
+      await uploadFile(file, type);
+    }
+  };
+
+  const uploadFile = async (file: File, type: 'logo' | 'coverImage') => {
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('stepNumber', '1');
+      formData.append('fieldName', type === 'logo' ? 'logoFile' : 'coverImageFile');
+
+      const response = await fetch('https://easytofindedu.onrender.com/api/v1/institute/draft/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData,
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const result = await response.json();
+
+      // Store the URL in formData
+      if (type === 'logo') {
+        setFormData(prev => ({
+          ...prev,
+          logoFile: result.data.url
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          coverImageFile: result.data.url
+        }));
+      }
+    } catch (error) {
+      console.error('File upload error:', error);
+      setErrors((prev: any) => ({
+        ...prev,
+        [type]: 'Failed to upload file. Please try again.'
+      }));
     }
   };
 
@@ -104,13 +151,13 @@ export default function Step1InstituteInfo({ data, onNext, onSaveDraft, loading 
     if (type === 'logo') {
       setFormData(prev => ({
         ...prev,
-        logoFile: null,
+        logoFile: '',
         logoPreview: ''
       }));
     } else {
       setFormData(prev => ({
         ...prev,
-        coverImageFile: null,
+        coverImageFile: '',
         coverImagePreview: ''
       }));
     }
