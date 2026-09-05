@@ -19,6 +19,27 @@ import Step14Verification from '../components/institute-registration/Step14Verif
 
 const TOTAL_STEPS = 14;
 
+// Map step numbers to backend field names
+const getStepFieldName = (step: number): string => {
+  const fieldNames: { [key: number]: string } = {
+    1: 'InstituteInfo',
+    2: 'Category',
+    3: 'LocationContact',
+    4: 'Courses',
+    5: 'Batches',
+    6: 'LearningExperience',
+    7: 'Facilities',
+    8: 'Faculty',
+    9: 'Fees',
+    10: 'Admission',
+    11: 'Career',
+    12: 'Results',
+    13: 'Gallery',
+    14: 'Verification'
+  };
+  return fieldNames[step] || '';
+};
+
 interface DraftData {
   step1?: any;
   step2?: any;
@@ -56,7 +77,7 @@ export default function InstituteRegistration() {
   const loadDraft = async () => {
     try {
       const token = getToken();
-      const res = await fetch('https://easytofindedu.onrender.com/api/v1/owner/institutes/draft', {
+      const res = await fetch('https://easytofindedu.onrender.com/api/v1/institute/draft', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -81,27 +102,21 @@ export default function InstituteRegistration() {
     setError(null);
     try {
       const token = getToken();
-      const formDataToSend = new FormData();
-      formDataToSend.append('step', step.toString());
-      formDataToSend.append('data', JSON.stringify(stepData));
 
-      // Add files if present (Step 1)
-      if (step === 1) {
-        if (stepData.logoFile) {
-          formDataToSend.append('logo', stepData.logoFile);
-        }
-        if (stepData.coverImageFile) {
-          formDataToSend.append('coverImage', stepData.coverImageFile);
-        }
-      }
+      // Build the payload matching backend expectations
+      const payload: any = {
+        currentStep: step,
+        [`step${step}${getStepFieldName(step)}`]: stepData
+      };
 
-      const res = await fetch('https://easytofindedu.onrender.com/api/v1/owner/institutes/draft', {
+      const res = await fetch('https://easytofindedu.onrender.com/api/v1/institute/draft/save', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
         credentials: 'include',
-        body: formDataToSend
+        body: JSON.stringify(payload)
       });
 
       if (!res.ok) {
