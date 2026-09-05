@@ -105,7 +105,7 @@ export default function Step1InstituteInfo({ data, onNext, onSaveDraft, loading 
 
   const uploadFile = async (file: File, type: 'logo' | 'coverImage') => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('etf_token');
       const formData = new FormData();
       formData.append('file', file);
       formData.append('stepNumber', '1');
