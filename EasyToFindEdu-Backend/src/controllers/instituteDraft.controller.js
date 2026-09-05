@@ -4,7 +4,7 @@ import { uploadOnCloudinary } from '../config/cloudinary.js';
 // Get draft for logged-in owner
 export const getDraft = async (req, res) => {
   try {
-    const ownerId = req.user.id;
+    const ownerId = req.owner._id;
 
     let draft = await InstituteDraft.findOne({
       owner: ownerId,
@@ -39,7 +39,7 @@ export const getDraft = async (req, res) => {
 // Save draft (manual save or auto-save)
 export const saveDraft = async (req, res) => {
   try {
-    const ownerId = req.user.id;
+    const ownerId = req.owner._id;
     const {
       currentStep,
       step1InstituteInfo,
@@ -114,7 +114,7 @@ export const saveDraft = async (req, res) => {
 // Upload file for draft (images, documents)
 export const uploadDraftFile = async (req, res) => {
   try {
-    const ownerId = req.user.id;
+    const ownerId = req.owner._id;
     const { fieldName, stepNumber } = req.body;
 
     if (!req.file) {
@@ -175,7 +175,7 @@ export const uploadDraftFile = async (req, res) => {
 // Submit draft for verification (final submission)
 export const submitDraft = async (req, res) => {
   try {
-    const ownerId = req.user.id;
+    const ownerId = req.owner._id;
 
     const draft = await InstituteDraft.findOne({
       owner: ownerId,
@@ -230,7 +230,7 @@ export const submitDraft = async (req, res) => {
 // Delete draft
 export const deleteDraft = async (req, res) => {
   try {
-    const ownerId = req.user.id;
+    const ownerId = req.owner._id;
 
     const draft = await InstituteDraft.findOneAndDelete({
       owner: ownerId,
@@ -261,7 +261,7 @@ export const deleteDraft = async (req, res) => {
 // Get draft status for dashboard
 export const getDraftStatus = async (req, res) => {
   try {
-    const ownerId = req.user.id;
+    const ownerId = req.owner._id;
 
     const draft = await InstituteDraft.findOne({
       owner: ownerId,
