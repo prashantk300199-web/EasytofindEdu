@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Career Guidance - Tree Visualization</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .sidebar-header h1 {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-header p {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        .filter-group {
+            margin-bottom: 20px;
+        }
+
+        .filter-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+            background: #f9f9f9;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        button {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .btn-secondary:hover {
+            background: #e8e8e8;
+        }
+
+        .stats-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 12px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .stat-item strong {
+            font-weight: 600;
+        }
+
+        .legend {
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 12px;
+            font-size: 11px;
+            margin-bottom: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+
+        .toolbar {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 2px;
+            background: #f9f9f9;
+        }
+
+        .view-toggle button {
+            padding: 6px 12px;
+            background: transparent;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.2s;
+        }
+
+        .view-toggle button.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .zoom-controls {
+            display: flex;
+            gap: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 2px;
+            background: #f9f9f9;
+        }
+
+        .zoom-controls button {
+            padding: 6px 10px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .zoom-controls button:hover {
+            color: #333;
+        }
+
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: auto;
+            background: #fafbfc;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .node {
+            cursor: pointer;
+        }
+
+        .node rect {
+            stroke-width: 2px;
+            transition: all 0.2s;
+        }
+
+        .node:hover rect {
+            filter: brightness(1.1);
+        }
+
+        .node text {
+            font-size: 11px;
+            pointer-events: none;
+            text-anchor: middle;
+            fill: white;
+        }
+
+        .link {
+            fill: none;
+            stroke: #d0d0d0;
+            stroke-width: 1.5px;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 10px;
+            color: #999;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .node-type-qualification { fill: #667eea; }
+        .node-type-stream_choice { fill: #764ba2; }
+        .node-type-entrance_exam { fill: #f093fb; }
+        .node-type-course { fill: #4facfe; }
+        .node-type-specialization { fill: #43e97b; }
+        .node-type-professional_cert { fill: #fa709a; }
+
+        .side-panel {
+            width: 350px;
+            background: white;
+            border-left: 1px solid #e0e0e0;
+            display: none;
+            flex-direction: column;
+            box-shadow: -2px 0 4px rgba(0, 0, 0, 0.05);
+            animation: slideIn 0.3s ease;
+        }
+
+        .side-panel.show {
+            display: flex;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+            }
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        .panel-header {
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-header h2 {
+            font-size: 16px;
+            color: #333;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            padding: 0;
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .detail-section {
+            margin-bottom: 20px;
+        }
+
+        .detail-section h3 {
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f5f5f5;
+            font-size: 13px;
+        }
+
+        .detail-row label {
+            font-weight: 500;
+            color: #666;
+        }
+
+        .detail-row value {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 500;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+
+        .badge.type {
+            background: #e7f3ff;
+            color: #0066cc;
+        }
+
+        .toolbar-right {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .toolbar-left {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>🎓 Career Tree</h1>
+            <p>Visualization & Filters</p>
+        </div>
+
+        <div class="sidebar-content">
+            <!-- Statistics -->
+            <div class="stats-box">
+                <div class="stat-item">
+                    <span>Total Nodes</span>
+                    <strong id="statTotalNodes">-</strong>
+                </div>
+                <div class="stat-item">
+                    <span>Exams</span>
+                    <strong id="statExams">-</strong>
+                </div>
+                <div class="stat-item">
+                    <span>Degrees</span>
+                    <strong id="statDegrees">-</strong>
+                </div>
+                <div class="stat-item">
+                    <span>Levels</span>
+                    <strong id="statLevels">-</strong>
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="legend">
+                <strong style="display: block; margin-bottom: 10px; font-size: 11px;">Node Types</strong>
+                <div class="legend-item">
+                    <div class="legend-color node-type-qualification"></div>
+                    <span>Qualification</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color node-type-entrance_exam"></div>
+                    <span>Exam</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color node-type-course"></div>
+                    <span>Course</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color node-type-specialization"></div>
+                    <span>Specialization</span>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="filter-group">
+                <label>Filter by Level</label>
+                <select id="filterLevel">
+                    <option value="">All Levels</option>
+                    <option value="1">Level 1 (Starting)</option>
+                    <option value="2">Level 2</option>
+                    <option value="3">Level 3</option>
+                    <option value="4">Level 4</option>
+                    <option value="5">Level 5</option>
+                    <option value="6">Level 6 (Advanced)</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Filter by Type</label>
+                <select id="filterNodeType">
+                    <option value="">All Types</option>
+                    <option value="qualification">Qualification</option>
+                    <option value="stream_choice">Stream Choice</option>
+                    <option value="entrance_exam">Entrance Exam</option>
+                    <option value="course">Course</option>
+                    <option value="specialization">Specialization</option>
+                    <option value="professional_cert">Professional Cert</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Search</label>
+                <input type="text" id="searchInput" placeholder="Search nodes...">
+            </div>
+
+            <div class="button-group">
+                <button class="btn-primary" onclick="applyFilters()">Apply</button>
+                <button class="btn-secondary" onclick="resetFilters()">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <div class="view-toggle">
+                    <button class="active" onclick="switchView('tree')">🌳 Tree</button>
+                    <button onclick="switchView('list')">📋 List</button>
+                </div>
+            </div>
+
+            <div class="toolbar-right">
+                <div class="zoom-controls">
+                    <button onclick="zoomIn()">🔍+</button>
+                    <button onclick="zoomReset()">↺</button>
+                    <button onclick="zoomOut()">🔍−</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Message -->
+        <div class="error-message" id="errorMessage"></div>
+
+        <!-- Canvas -->
+        <div class="canvas-container" id="canvasContainer">
+            <div class="loading">
+                <div class="spinner"></div>
+                <span>Loading career tree...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Side Panel -->
+    <div class="side-panel" id="sidePanel">
+        <div class="panel-header">
+            <h2 id="panelTitle">Node Details</h2>
+            <button class="close-btn" onclick="closePanel()">✕</button>
+        </div>
+        <div class="panel-content" id="panelContent">
+            <!-- Details will be populated here -->
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api/v1/career-guidance';
+        let allNodes = [];
+        let allLinks = [];  
+        let filteredNodes = [];
+        let filteredLinks = [];
+        let currentView = 'tree';
+        let zoomScale = 1;
+
+        // Color mapping
+        const colorMap = {
+            'qualification': '#667eea',
+            'stream_choice': '#764ba2',
+            'entrance_exam': '#f093fb',
+            'course': '#4facfe',
+            'specialization': '#43e97b',
+            'professional_cert': '#fa709a',
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 Page loaded, starting to fetch tree...');
+            await loadCareerTree();
+        });
+
+        async function loadCareerTree() {
+            try {
+                console.log('📡 Fetching tree from:', `${API_BASE_URL}/tree`);
+                const response = await fetch(`${API_BASE_URL}/tree`);
+
+                if (!response.ok) {
+                    throw new Error(`❌ HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const jsonData = await response.json();
+                console.log('📦 Raw API Response:', jsonData);
+
+                // Fix: Data is in "message", not "data"
+                let treeData = jsonData.message;
+
+                if (!treeData) {
+                    throw new Error('❌ No tree data found in response');
+                }
+
+                if (!Array.isArray(treeData)) {
+                    treeData = [treeData];
+                }
+
+                console.log(`✅ Processing ${treeData.length} root nodes`);
+                processTreeData(treeData);
+                updateStats();
+                renderTreeView();
+                console.log('✅ Tree rendering complete!');
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showError('Error loading career tree: ' + error.message);
+            }
+        }
+
+        function processTreeData(treeData) {
+            console.log('🔧 Processing tree data...');
+            allNodes = [];
+            allLinks = [];
+
+            let nodeId = 0;
+
+            function traverse(node, parentId = null, level = 1) {
+                if (!node) return;
+
+                nodeId++;
+                const currentId = nodeId;
+
+                allNodes.push({
+                    id: currentId,
+                    _id: node._id,
+                    title: node.title || 'Untitled',
+                    nodeType: node.nodeType || 'unknown',
+                    level: node.level || level,
+                    description: node.description || '',
+                    duration: node.duration || { value: 0, unit: 'years' },
+                    cost: node.cost || { average: 0 },
+                    successMetrics: node.successMetrics || {},
+                    difficultyLevel: node.difficultyLevel || 'moderate',
+                    isFeatured: node.isFeatured || false,
+                    color: colorMap[node.nodeType] || '#999',
+                });
+
+                if (parentId !== null) {
+                    allLinks.push({
+                        source: parentId,
+                        target: currentId,
+                    });
+                }
+
+                // Process children
+                if (node.children && Array.isArray(node.children)) {
+                    node.children.forEach((child) => {
+                        traverse(child, currentId, level + 1);
+                    });
+                }
+            }
+
+            treeData.forEach((node) => {
+                traverse(node, null);
+            });
+
+            console.log(`✅ Processed ${allNodes.length} nodes, ${allLinks.length} links`);
+
+            filteredNodes = [...allNodes];
+            filteredLinks = [...allLinks];
+        }
+
+        function updateStats() {
+            document.getElementById('statTotalNodes').textContent = allNodes.length;
+            document.getElementById('statExams').textContent = allNodes.filter(
+                (n) => n.nodeType === 'entrance_exam'
+            ).length;
+            document.getElementById('statDegrees').textContent = allNodes.filter(
+                (n) => n.nodeType === 'course'
+            ).length;
+            const maxLevel = Math.max(...allNodes.map((n) => n.level), 0);
+            document.getElementById('statLevels').textContent = maxLevel;
+        }
+
+        function applyFilters() {
+            const level = document.getElementById('filterLevel').value;
+            const nodeType = document.getElementById('filterNodeType').value;
+            const search = document.getElementById('searchInput').value.toLowerCase();
+
+            filteredNodes = allNodes.filter((node) => {
+                if (level && node.level !== parseInt(level)) return false;
+                if (nodeType && node.nodeType !== nodeType) return false;
+                if (search && !node.title.toLowerCase().includes(search)) return false;
+                return true;
+            });
+
+            const nodeIds = new Set(filteredNodes.map((n) => n.id));
+            filteredLinks = allLinks.filter(
+                (link) => nodeIds.has(link.source) && nodeIds.has(link.target)
+            );
+
+            renderView();
+        }
+
+        function resetFilters() {
+            document.getElementById('filterLevel').value = '';
+            document.getElementById('filterNodeType').value = '';
+            document.getElementById('searchInput').value = '';
+
+            filteredNodes = [...allNodes];
+            filteredLinks = [...allLinks];
+
+            renderView();
+        }
+
+        function switchView(view) {
+            currentView = view;
+
+            document.querySelectorAll('.view-toggle button').forEach((btn) => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            renderView();
+        }
+
+        function renderView() {
+            if (currentView === 'tree') {
+                renderTreeView();
+            } else if (currentView === 'list') {
+                renderListView();
+            }
+        }
+
+        function renderTreeView() {
+            const container = document.getElementById('canvasContainer');
+            container.innerHTML = '';
+
+            const svg = d3
+                .select(container)
+                .append('svg')
+                .attr('viewBox', [0, 0, container.clientWidth, container.clientHeight]);
+
+            const g = svg.append('g');
+
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            // Use force simulation for better layout
+            const simulation = d3
+                .forceSimulation(filteredNodes)
+                .force(
+                    'link',
+                    d3
+                        .forceLink(filteredLinks)
+                        .id((d) => d.id)
+                        .distance(150)
+                )
+                .force('charge', d3.forceManyBody().strength(-800))
+                .force('center', d3.forceCenter(width / 2, height / 2));
+
+            // Draw links
+            const link = g
+                .selectAll('line')
+                .data(filteredLinks)
+                .enter()
+                .append('line')
+                .attr('class', 'link')
+                .attr('stroke-width', 2);
+
+            // Draw nodes
+            const node = g
+                .selectAll('g.node')
+                .data(filteredNodes)
+                .enter()
+                .append('g')
+                .attr('class', 'node')
+                .call(drag(simulation))
+                .on('click', (event, d) => showNodeDetails(d));
+
+            node
+                .append('rect')
+                .attr('width', 120)
+                .attr('height', 60)
+                .attr('x', -60)
+                .attr('y', -30)
+                .attr('rx', 5)
+                .attr('fill', (d) => d.color)
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 2);
+
+            node
+                .append('text')
+                .attr('dy', -5)
+                .attr('text-anchor', 'middle')
+                .attr('font-weight', 'bold')
+                .attr('font-size', '12px')
+                .text((d) =>
+                    d.title.length > 15
+                        ? d.title.substring(0, 15) + '...'
+                        : d.title
+                );
+
+            node
+                .append('text')
+                .attr('dy', 15)
+                .attr('text-anchor', 'middle')
+                .attr('font-size', '10px')
+                .attr('opacity', 0.8)
+                .text((d) =>
+                    d.cost?.average
+                        ? `₹${(d.cost.average / 100000).toFixed(1)}L`
+                        : 'Free'
+                );
+
+            simulation.on('tick', () => {
+                link
+                    .attr('x1', (d) => d.source.x)
+                    .attr('y1', (d) => d.source.y)
+                    .attr('x2', (d) => d.target.x)
+                    .attr('y2', (d) => d.target.y);
+
+                node.attr('transform', (d) => `translate(${d.x},${d.y})`);
+            });
+
+            // Add zoom
+            svg.call(
+                d3.zoom().on('zoom', (event) => {
+                    g.attr('transform', event.transform);
+                })
+            );
+        }
+
+        function renderListView() {
+            const container = document.getElementById('canvasContainer');
+            container.innerHTML = '';
+
+            const table = document.createElement('table');
+            table.style.width = '100%';
+            table.style.borderCollapse = 'collapse';
+            table.style.fontSize = '12px';
+
+            const header = table.createTHead();
+            const headerRow = header.insertRow();
+            ['Title', 'Type', 'Level', 'Duration', 'Cost'].forEach((text) => {
+                const th = document.createElement('th');
+                th.textContent = text;
+                th.style.padding = '10px';
+                th.style.textAlign = 'left';
+                th.style.borderBottom = '2px solid #e0e0e0';
+                th.style.background = '#f9f9f9';
+                headerRow.appendChild(th);
+            });
+
+            const tbody = table.createTBody();
+            filteredNodes.forEach((node) => {
+                const row = tbody.insertRow();
+                row.style.borderBottom = '1px solid #f0f0f0';
+                row.style.cursor = 'pointer';
+                row.onclick = () => showNodeDetails(node);
+
+                const cells = [
+                    node.title,
+                    node.nodeType,
+                    node.level,
+                    `${node.duration?.value} ${node.duration?.unit || ''}`,
+                    node.cost?.average ? `₹${(node.cost.average / 100000).toFixed(1)}L` : '-',
+                ];
+
+                cells.forEach((text) => {
+                    const td = row.insertCell();
+                    td.textContent = text;
+                    td.style.padding = '10px';
+                });
+            });
+
+            const wrapper = document.createElement('div');
+            wrapper.style.overflowY = 'auto';
+            wrapper.style.height = '100%';
+            wrapper.style.padding = '10px';
+            wrapper.appendChild(table);
+
+            container.appendChild(wrapper);
+        }
+
+        function drag(simulation) {
+            function dragstarted(event, d) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+
+            function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            }
+
+            function dragended(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            }
+
+            return d3
+                .drag()
+                .on('start', dragstarted)
+                .on('drag', dragged)
+                .on('end', dragended);
+        }
+
+        function showNodeDetails(node) {
+            const panel = document.getElementById('sidePanel');
+            const title = document.getElementById('panelTitle');
+            const content = document.getElementById('panelContent');
+
+            title.textContent = node.title;
+
+            const html = `
+                <div class="detail-section">
+                    <h3>General Info</h3>
+                    <div class="detail-row"><label>Type</label><span class="badge type">${node.nodeType}</span></div>
+                    <div class="detail-row"><label>Level</label><value>${node.level}</value></div>
+                    <div class="detail-row"><label>Difficulty</label><value>${node.difficultyLevel}</value></div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>Duration & Cost</h3>
+                    <div class="detail-row"><label>Duration</label><value>${node.duration?.value} ${node.duration?.unit}</value></div>
+                    <div class="detail-row"><label>Avg Cost</label><value>₹${node.cost?.average?.toLocaleString() || '0'}</value></div>
+                </div>
+
+                ${
+                    node.successMetrics && Object.keys(node.successMetrics).length > 0
+                        ? `
+                    <div class="detail-section">
+                        <h3>Success Metrics</h3>
+                        ${Object.entries(node.successMetrics)
+                            .map(
+                                ([key, value]) =>
+                                    `<div class="detail-row"><label>${key}</label><value>${value}${
+                                        key.includes('Rate') ? '%' : ''
+                                    }</value></div>`
+                            )
+                            .join('')}
+                    </div>
+                `
+                        : ''
+                }
+
+                ${
+                    node.description
+                        ? `<div class="detail-section"><h3>Description</h3><p style="font-size: 12px; color: #666;">${node.description}</p></div>`
+                        : ''
+                }
+            `;
+
+            content.innerHTML = html;
+            panel.classList.add('show');
+        }
+
+        function closePanel() {
+            document.getElementById('sidePanel').classList.remove('show');
+        }
+
+        function zoomIn() {
+            zoomScale += 0.2;
+        }
+
+        function zoomOut() {
+            zoomScale = Math.max(zoomScale - 0.2, 0.5);
+        }
+
+        function zoomReset() {
+            zoomScale = 1;
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+            setTimeout(() => {
+                errorEl.classList.remove('show');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

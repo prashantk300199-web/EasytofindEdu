@@ -1,0 +1,181 @@
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import morgan from "morgan";
+import cookieParser from "cookie-parser";
+import path from 'path';
+import { fileURLToPath } from 'url';
+import env from "./config/env.js";
+import errorHandler from "./middlewares/errorHandler.js";
+import { requestLogger, securityHeaders, validateRequestSize } from "./middlewares/requestLogger.js";
+import authRoutes from "./routes/auth.routes.js";
+import ownerRoutes from "./routes/owner.routes.js";
+import hostelRoutes from "./routes/hostel.routes.js";
+import offerRoutes from "./routes/offer.routes.js";
+import bookingRoutes from "./routes/booking.routes.js";
+import reviewRoutes from "./routes/review.routes.js";
+import adminAuthRoutes from "./routes/admin.auth.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
+import adminOwnerRoutes from "./routes/admin.owner.routes.js";
+import adminHostelRoutes from "./routes/admin.hostel.routes.js";
+import instituteRoutes from './routes/institute.routes.js';
+import instituteAuthRoutes from './routes/institute.auth.routes.js';
+import ownerInstituteRoutes from './routes/owner.institute.routes.js';
+import adminInstituteRoutes from './routes/admin.institute.routes.js';
+import adminInstituteApplicationRoutes from './routes/admin.instituteApplication.routes.js';
+import adminInstituteOwnerRoutes from "./routes/admin.institute.owner.routes.js";
+import adminDashboardRoutes from "./routes/admin.dashboard.routes.js";
+import studentAuthRoutes from "./routes/student.routes.js";
+import careerGuidancePublicRoutes from "./routes/careerGuidance.public.routes.js";
+import careerGuidanceRoutes from "./routes/careerGuidance.routes.js";
+import careerGuidanceAdminRoutes from "./routes/careerGuidance.admin.routes.js";
+import careerProgramPublicRoutes from "./routes/careerProgram.public.routes.js";
+import careerProgramAdminRoutes from "./routes/careerProgram.admin.routes.js";
+import enquiryRoutes from "./routes/enquiry.routes.js";
+import publicRoutes from "./routes/public.routes.js";
+import admissionRoutes from "./routes/admission.routes.js";
+import inquiryRoutes from "./routes/inquiry.routes.js";
+import referenceRoutes from "./routes/reference.routes.js";
+import cgRoutes from "./routes/cg.routes.js";
+import compareRoutes from "./routes/compare.routes.js";
+import blogRoutes from "./routes/blog.routes.js";
+import collegeCourseRoutes from "./routes/collegeCourse.routes.js";
+import collegeRoutes from "./routes/college.routes.js";
+import walletRoutes from "./routes/wallet.routes.js";
+import scheduleVisitRoutes from "./routes/scheduleVisit.routes.js";
+import instituteDraftRoutes from "./routes/instituteDraft.routes.js";
+import categoryRoutes from "./routes/category.routes.js";
+
+import ApiResponse from "./utils/ApiResponse.js";
+
+
+const app = express();
+
+// Trust proxy for rate limiting (needed for express-rate-limit v7+)
+app.set("trust proxy", 1);
+
+// Security middleware - Applied first
+app.use(helmet());
+app.use(securityHeaders);
+app.use(validateRequestSize);
+
+// CORS configuration for cross-device compatibility
+// MUST be before auth guards to handle preflight requests properly
+app.use(cors({
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      'https://easytofindedu.com',
+      'https://www.easytofindedu.com',
+      'https://admin.easytofindedu.com',
+      'http://localhost:5173', // for development
+      'http://localhost:5174', // alternative dev port (Vite)
+      'http://localhost:3000', // alternative dev port
+      'http://localhost:8080', // alternative dev port
+      'http://localhost:8081', // alternative dev port
+      'http://localhost:5175', // alternative dev port
+    ];
+
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['X-Total-Count', 'X-Page-Number', 'X-Request-ID', 'X-Response-Time'],
+  maxAge: 86400, // 24 hours - cache preflight requests
+}));
+
+// Handle preflight requests explicitly
+app.options('*', cors());
+
+// Logging middleware
+app.use(morgan("dev"));
+app.use(requestLogger);
+
+// Body parsers with appropriate limits for file uploads
+// Increased limits to handle multiple image uploads (5 × 10MB = 50MB)
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+// Health check endpoints
+app.get("/", (req, res) => {
+  res.status(200).json(
+    new ApiResponse(200, "EasyToFindEdu API is running.")
+  );
+});
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+app.get("/api/v1/health", (req, res) => {
+  res.status(200).json(
+    new ApiResponse(200, "Server is healthy.", {
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+      environment: env.nodeEnv,
+      version: "1.0.0",
+    })
+  );
+});
+
+// API Routes (Protected)
+app.use("/api/v1/auth", authRoutes);  // includes /google route
+// NOTE: /api/v1/owner/institutes must be registered BEFORE /api/v1/owner
+// otherwise the hostel-owner authenticateOwner middleware runs first on all /owner/* paths
+app.use("/api/v1/owner/institutes", ownerInstituteRoutes);
+app.use("/api/v1/owner", ownerRoutes);
+app.use("/api/v1/hostels", hostelRoutes);
+app.use("/api/v1/offers", offerRoutes);
+app.use("/api/v1/bookings", bookingRoutes);
+app.use("/api/v1/reviews", reviewRoutes);
+app.use("/api/v1/admin/auth", adminAuthRoutes);
+app.use("/api/v1/admin/dashboard", adminDashboardRoutes);
+app.use("/api/v1/admin/members", adminRoutes);
+app.use("/api/v1/admin/owners", adminOwnerRoutes);
+app.use("/api/v1/admin/institute-owners", adminInstituteOwnerRoutes);
+app.use("/api/v1/admin/hostels", adminHostelRoutes);
+app.use("/api/v1/admin/institutes", adminInstituteRoutes);
+app.use("/api/admin/institute-applications", adminInstituteApplicationRoutes);
+app.use("/api/v1/institutes", instituteRoutes);
+app.use("/api/v1/institute/auth", instituteAuthRoutes);
+app.use("/api/v1/student/auth", studentAuthRoutes);
+app.use("/api/v1/enquiries", enquiryRoutes);
+app.use("/api/v1/admissions", admissionRoutes);
+app.use("/api/v1/public", publicRoutes);
+app.use("/api/v1/inquiries", inquiryRoutes);
+app.use("/api/v1/references", referenceRoutes);
+app.use("/api/v1/compare", compareRoutes);
+app.use("/api/v1/blogs", blogRoutes);
+app.use("/api/v1/college-courses", collegeCourseRoutes);
+app.use("/api/v1/collegeS", collegeRoutes);
+app.use("/api/v1/careers", careerProgramPublicRoutes);
+app.use("/api/v1/wallet", walletRoutes);
+app.use("/api/v1/schedule-visit", scheduleVisitRoutes);
+app.use("/api/v1/institute", instituteDraftRoutes);
+app.use("/api/v1/institute", categoryRoutes);
+app.use("/api/v1/admin/careers", careerProgramAdminRoutes);
+app.use("/api/v1/career-guidance", careerGuidancePublicRoutes);
+app.use("/api/v1/career-guidance", careerGuidanceRoutes);
+app.use("/api/v1/admin/career", careerGuidanceAdminRoutes);
+app.use("/api/v1/cg", cgRoutes);
+
+app.use(express.static(path.join(__dirname, '../public')));
+
+
+// 404 handler
+app.all("*", (req, res) => {
+  res.status(404).json(
+    new ApiResponse(404, `Route ${req.originalUrl} not found.`)
+  );
+});
+
+// Error handler (must be last middleware)
+app.use(errorHandler);
+
+export default app;
