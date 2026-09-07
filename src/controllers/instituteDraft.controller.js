@@ -296,10 +296,12 @@ export const getDraftStatus = async (req, res) => {
   try {
     const ownerId = req.owner._id;
 
+    // Find the most recent institute draft/submission for this owner (any status)
     const draft = await InstituteDraft.findOne({
-      owner: ownerId,
-      status: 'draft'
-    }).select('currentStep completionPercentage lastSavedAt status');
+      owner: ownerId
+    })
+    .sort({ updatedAt: -1, lastSavedAt: -1 })
+    .select('currentStep completionPercentage lastSavedAt submittedAt status step1InstituteInfo adminFeedback rejectionReason');
 
     res.status(200).json({
       success: true,
