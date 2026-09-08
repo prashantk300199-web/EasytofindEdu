@@ -17,7 +17,7 @@ const ROOM_TYPES = [
 
 const roomSchema = new mongoose.Schema({
   room_type: { type: String, enum: ROOM_TYPES, required: true },
-  total_beds: { type: Number, required: true, min: 1 },
+  total_beds: { type: Number, required: true, min: 0 },
   available_beds_count: { type: Number, default: 0 },
   monthly_rent: { type: Number, required: true, min: 0 },
   is_available: { type: Boolean, default: true },
@@ -27,7 +27,7 @@ const roomSchema = new mongoose.Schema({
 const mealPlanSchema = new mongoose.Schema({
   frequency: { type: String, enum: ["2_times", "3_times", "4_times"], required: true },
   meal_type: { type: String, enum: ["veg", "non_veg", "both"], required: true },
-  service_type: { type: String, enum: ["in_house_kitchen", "third_party_vendor"], required: true },
+  service_type: { type: String, enum: ["in_house_kitchen", "somewhere_else_cooked"], required: true },
   monthly_cost: { type: Number, default: 0, min: 0 },
   menu_card: {
     url: { type: String },
@@ -45,7 +45,7 @@ const hostelSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true, maxlength: 200 },
   masked_name: { type: String, trim: true },
   slug: { type: String, unique: true, lowercase: true, index: true },
-  hostel_type: { type: String, enum: [...Object.values(HOSTEL_TYPE), "co-ed"], required: true },
+  hostel_type: { type: String, enum: Object.values(HOSTEL_TYPE), required: true },
   description: { type: String, required: true, maxlength: 2000 },
   photos: [{
     url: { type: String, required: true },
@@ -83,7 +83,9 @@ const hostelSchema = new mongoose.Schema({
     alternative_phone: { type: String, trim: true },
     additional_phones: [{ type: String, trim: true }],
     email: { type: String, trim: true, lowercase: true },
-    warden_name: { type: String, trim: true }
+    owner_name: { type: String, trim: true },
+    owner_age: { type: String, trim: true },
+    owner_gender: { type: String, enum: ["male", "female", "other", ""], trim: true }
   },
 
   rooms: [roomSchema],
@@ -113,9 +115,11 @@ const hostelSchema = new mongoose.Schema({
   // ADDED FROM YOUR IMAGE: Warden Details
   warden: {
     name: { type: String, trim: true },
-    gender: { type: String, enum: ["male", "female", "other"] },
+    gender: { type: String, enum: ["male", "female", "other", ""] },
     age: { type: String, trim: true },
     contact_number: { type: String, trim: true },
+    alternative_contact: { type: String, trim: true },
+    additional_contacts: [{ type: String, trim: true }],
     email: { type: String, trim: true, lowercase: true }
   },
 
@@ -148,7 +152,7 @@ const hostelSchema = new mongoose.Schema({
   },
   building_details: {
     building_age_years: { type: Number, min: 0, default: 0 },
-    flooring_type: { type: String, enum: ["tiles", "marble", "granite", "mosaic"], default: "tiles" },
+    flooring_type: { type: String, enum: ["tiles", "marble", "granite", "mosaic", "plaster"], default: "tiles" },
     number_of_floors: { type: Number, min: 1, default: 1 },
   },
   legal_docs: {

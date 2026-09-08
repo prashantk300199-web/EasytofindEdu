@@ -1,7 +1,7 @@
 export const HOSTEL_TYPE = {
   BOYS: "boys",
   GIRLS: "girls",
-  BOTH: "both",
+  CO_ED: "co_ed",
 };
 
 export const ROOM_TYPE = {
