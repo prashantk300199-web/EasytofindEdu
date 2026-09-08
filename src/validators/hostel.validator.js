@@ -50,7 +50,7 @@ const ROOM_TYPES = [
 const roomItemSchema = Joi.object({
   room_type: Joi.string().valid(...ROOM_TYPES).required(),
 
-  total_beds: joiNumber.integer().min(1).required(),
+  total_beds: joiNumber.integer().min(0).required(),
 
   monthly_rent: joiNumber.min(0).required(),
 
@@ -71,7 +71,7 @@ const mealPlanItemSchema = Joi.object({
   meal_type: Joi.string().valid("veg", "non_veg", "both").required(),
 
   service_type: Joi.string()
-    .valid("in_house_kitchen", "tiffin_service")
+    .valid("in_house_kitchen", "somewhere_else_cooked")
     .required(),
 
   menu_card: Joi.object({
@@ -116,7 +116,7 @@ export const createHostelSchema = Joi.object({
         line1: Joi.string().trim().required(),
         line2: Joi.string().trim().allow(""),
         area: Joi.string().trim().required(),
-        subarea: Joi.string().trim().required(),
+        subarea: Joi.string().trim().allow("").empty(""),
         pincode: Joi.string().trim().length(6).required(),
         city: Joi.string().trim().required(),
         state: Joi.string().trim().required(),
@@ -283,7 +283,7 @@ export const createHostelSchema = Joi.object({
   building_details: Joi.alternatives().try(
     Joi.object({
       building_age_years: joiNumber.min(0).default(0),
-      flooring_type: Joi.string().valid("tiles","marble","granite","mosaic").default("tiles"),
+      flooring_type: Joi.string().valid("tiles","marble","granite","mosaic","plaster").default("tiles"),
       number_of_floors: joiNumber.min(1).default(1),
     }),
     Joi.string().custom(parseJSON)
@@ -319,6 +319,8 @@ export const createHostelSchema = Joi.object({
       gender: Joi.string().valid("male","female","other").allow("").empty(""),
       age: Joi.string().trim().allow("").empty(""),
       contact_number: Joi.string().trim().allow("").empty(""),
+      alternative_contact: Joi.string().trim().allow("").empty(""),
+      additional_contacts: Joi.array().items(Joi.string().trim()).default([]),
       email: Joi.string().trim().email().allow("").empty(""),
     }),
     Joi.string().custom(parseJSON)
@@ -331,7 +333,9 @@ export const createHostelSchema = Joi.object({
       alternative_phone: Joi.string().trim().allow("").empty(""),
       additional_phones: Joi.array().items(Joi.string().trim()).default([]),
       email: Joi.string().trim().email().allow("").empty(""),
-      warden_name: Joi.string().trim().allow("").empty(""),
+      owner_name: Joi.string().trim().allow("").empty(""),
+      owner_age: Joi.string().trim().allow("").empty(""),
+      owner_gender: Joi.string().valid("male","female","other").allow("").empty(""),
     }),
     Joi.string().custom(parseJSON)
   ).default({}),
