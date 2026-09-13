@@ -175,6 +175,11 @@ const hostelSchema = new mongoose.Schema({
     studentSatisfaction: { type: Number, default: 0 },
     overallScore: { type: Number, default: 0 }
   },
+  social_media: {
+    youtube: { type: String, trim: true, default: "" },
+    instagram: { type: String, trim: true, default: "" },
+    facebook: { type: String, trim: true, default: "" },
+  },
   notice_period_days: { type: Number, default: 30, min: 0 },
   status: { type: String, enum: Object.values(HOSTEL_STATUS), default: HOSTEL_STATUS.PENDING },
   is_open: { type: Boolean, default: true },

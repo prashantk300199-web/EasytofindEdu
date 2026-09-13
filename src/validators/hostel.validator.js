@@ -340,6 +340,16 @@ export const createHostelSchema = Joi.object({
     Joi.string().custom(parseJSON)
   ).default({}),
 
+  /* --------------------------- Social Media ------------------------- */
+  social_media: Joi.alternatives().try(
+    Joi.object({
+      youtube: Joi.string().uri({ scheme: ['http', 'https'] }).allow("").empty("").default(""),
+      instagram: Joi.string().uri({ scheme: ['http', 'https'] }).allow("").empty("").default(""),
+      facebook: Joi.string().uri({ scheme: ['http', 'https'] }).allow("").empty("").default(""),
+    }),
+    Joi.string().custom(parseJSON)
+  ).default({}),
+
   /* --------------------------- Others ----------------------------------- */
   total_hostel_beds: joiNumber.integer().min(0).default(0),
 
