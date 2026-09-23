@@ -243,10 +243,11 @@ const getNodesData = () => {
     description: desc,
     overview,
     duration: { value: dur_val, unit: dur_unit },
-    cost: { min: cmin, max: cmax, average: cavg, currency: "INR", frequency: "per-year" },
+    // cost and successMetrics are not included — these fields contain unsupported
+    // fabricated data and must not be re-seeded; existing DB records are protected
+    // by exclusion in the student-facing API (getNodes, getRoadmap, getNodeDetail)
     applicableQualifications: opts.q || [],
     applicableStreams: opts.s || [],
-    successMetrics: opts.m || {},
     difficultyLevel: opts.d || "moderate",
     isFeatured: opts.f || false,
     status: "active",
@@ -646,9 +647,9 @@ const seedDatabase = async () => {
         ...node,
         slug: slugify(node.title, { lower: true, strict: true }),
         createdBy: adminId,
-        isVerified: true,
-        verifiedBy: adminId,
-        verificationDate: new Date(),
+        isVerified: false,
+        dataSource: null,
+        seedNote: "Seed data — replace with verified sources before production",
       };
     });
 

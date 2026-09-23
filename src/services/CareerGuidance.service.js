@@ -122,7 +122,7 @@ export const getFeaturedCourses = async () => {
       status: NODE_STATUS.ACTIVE,
     })
       .select(
-        "title slug description thumbnail cost duration nodeType successMetrics"
+        "title slug description thumbnail duration nodeType popularityScore"
       )
       .limit(20)
       .lean();
@@ -156,28 +156,15 @@ export const searchCourses = async (filters = {}, page = 1, limit = 20) => {
       query.nodeType = filters.nodeType;
     }
 
-    // Cost range
-    if (filters.minCost || filters.maxCost) {
-      query["cost.average"] = {};
-      if (filters.minCost) query["cost.average"].$gte = filters.minCost;
-      if (filters.maxCost) query["cost.average"].$lte = filters.maxCost;
-    }
-
-    // Success rate
-    if (filters.minSuccessRate || filters.maxSuccessRate) {
-      query["successMetrics.successRate"] = {};
-      if (filters.minSuccessRate)
-        query["successMetrics.successRate"].$gte = filters.minSuccessRate;
-      if (filters.maxSuccessRate)
-        query["successMetrics.successRate"].$lte = filters.maxSuccessRate;
-    }
+    // Cost range (available for future verified data; currently not selected)
+    // Success rate (available for future verified data; currently not selected)
 
     const skip = (page - 1) * limit;
 
     const [courses, totalCount] = await Promise.all([
       CareerPathNode.find(query)
         .select(
-          "title slug nodeType description thumbnail cost duration successMetrics popularityScore"
+          "title slug nodeType description thumbnail duration popularityScore"
         )
         .skip(skip)
         .limit(limit)

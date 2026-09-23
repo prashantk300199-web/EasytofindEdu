@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import InstituteApplications from './pages/InstituteApplications.jsx';
 import InstituteApplicationReview from './pages/InstituteApplicationReview.jsx';
+import CareerManagement from './pages/CareerManagement.jsx';
 
 const API_BASE = 'https://api.easytofindedu.com/api/v1';
 
@@ -156,7 +157,7 @@ function Login({ onLogin }) {
 
 /* ─── Top Header Bar ───────────────────────────────────────── */
 
-function TopBar({ onLogout }) {
+function TopBar({ onLogout, pendingCount = 0 }) {
   const [showProfile, setShowProfile] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -180,7 +181,7 @@ function TopBar({ onLogout }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
             <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-wine text-white text-[9px] flex items-center justify-center rounded-full px-1">
-              3
+              {pendingCount > 0 ? pendingCount : '0'}
             </span>
           </button>
 
@@ -277,6 +278,7 @@ function Sidebar({ view, setView, stats }) {
     { id: 'inquiries', label: 'Inquiries', count: null },
     { id: 'owners', label: 'Owners', count: counts.hostelOwners ?? 0 },
     { id: 'students', label: 'Students', count: counts.students ?? 0 },
+    { id: 'career', label: 'Career Guidance', count: null },
     { id: 'analytics', label: 'Analytics', count: null },
   ];
 
@@ -1219,6 +1221,7 @@ export default function App() {
           {view === 'owners' && <Owners token={token} />}
           {view === 'students' && <Students token={token} />}
           {view === 'analytics' && <Analytics token={token} />}
+          {view === 'career' && <CareerManagement token={token} />}
         </main>
       </div>
     </div>
