@@ -3,7 +3,6 @@ services:
     name: vidya-marg-api
     runtime: node
     plan: free
-    rootDir: EasyToFindEdu-Backend
     buildCommand: npm install
     startCommand: npm start
     envVars:
@@ -33,3 +32,9 @@ services:
         sync: false
       - key: FRONTEND_URL
         sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.6-flash
