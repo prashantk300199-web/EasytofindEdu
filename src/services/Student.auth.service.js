@@ -175,9 +175,6 @@ export const loginStudent = async (email, password) => {
   const student = await Student.findOne({ email }).select("+password");
   if (!student) throw new ApiError(401, "Invalid email or password.");
 
-  if (student.status === "pending")
-    throw new ApiError(403, "Please verify your email first.");
-
   if (student.status === "blocked")
     throw new ApiError(403, "Your account has been blocked.");
 
