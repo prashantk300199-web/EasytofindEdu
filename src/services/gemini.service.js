@@ -115,7 +115,7 @@ export async function generateResponse(messages, options = {}) {
       const errBody = await response?.json();
       errorDetail = errBody?.error?.message || JSON.stringify(errBody);
     } catch { /* ignore */ }
-    logger.error("Gemini API error", { status: response?.status, detail: errorDetail });
+    logger.error("Gemini API error", { status: response?.status, detail: errorDetail, url: url });
     throw new Error(`Gemini API error (${response?.status}): ${errorDetail || "Unknown error"}`);
   }
 
