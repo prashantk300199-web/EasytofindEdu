@@ -6,7 +6,7 @@ const logger = {
 };
 
 let apiKey = process.env.GEMINI_API_KEY || "";
-let model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+let model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 let apiUrl = process.env.GEMINI_API_URL || "https://generativelanguage.googleapis.com/v1beta/models";
 
 // Debug log on service initialization
