@@ -30,10 +30,6 @@ export const authenticateStudent = async (req, res, next) => {
       throw new ApiError(403, "Your account has been blocked.");
     }
 
-    if (student.status === "pending") {
-      throw new ApiError(403, "Please verify your email first.");
-    }
-
     req.student = student;
     next();
   } catch (error) {
