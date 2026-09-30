@@ -4,7 +4,7 @@ import adminEntranceExamController from "../controllers/admin.entranceExam.contr
 import adminCollegeController from "../controllers/admin.college.controller.js";
 import verifyAdmin from "../middlewares/auth.js";
 import validate from "../middlewares/validate.js";
-import { updateProgramValidator } from "../validators/careerProgram.validator.js";
+import { updateProgramValidator, createProgramValidator, createExamValidator, createCollegeValidator } from "../validators/careerProgram.validator.js";
 
 const router = express.Router();
 
@@ -16,8 +16,8 @@ router.use(verifyAdmin);
 router.get("/programs", adminCareerProgramController.getAllPrograms);
 router.get("/programs/stats", adminCareerProgramController.getProgramStats);
 
-// Program creation route (validation removed as requested)
-router.post("/programs", adminCareerProgramController.createProgram);
+// Program creation route
+router.post("/programs", validate(createProgramValidator), adminCareerProgramController.createProgram);
 
 router.put(
   "/programs/:id",
@@ -41,7 +41,7 @@ router.post("/programs/bulk/import", adminCareerProgramController.bulkImportProg
 
 // ============= ENTRANCE EXAMS (CRUD) =============
 router.get("/exams", adminEntranceExamController.getAllExams);
-router.post("/exams", adminEntranceExamController.createExam);
+router.post("/exams", validate(createExamValidator), adminEntranceExamController.createExam);
 router.put("/exams/:id", adminEntranceExamController.updateExam);
 router.patch("/exams/:id/publish", adminEntranceExamController.publishExam);
 router.delete("/exams/:id", adminEntranceExamController.archiveExam);
@@ -50,7 +50,7 @@ router.get("/exams/:slug", adminEntranceExamController.getExamBySlug);
 // ============= COLLEGES (CRUD) =============
 router.get("/colleges", adminCollegeController.getAllColleges);
 router.get("/colleges/top", adminCollegeController.getTopColleges);
-router.post("/colleges", adminCollegeController.createCollege);
+router.post("/colleges", validate(createCollegeValidator), adminCollegeController.createCollege);
 router.put("/colleges/:id", adminCollegeController.updateCollege);
 router.delete("/colleges/:id", adminCollegeController.archiveCollege);
 router.post("/colleges/:collegeId/programs", adminCollegeController.addProgramToCollege);

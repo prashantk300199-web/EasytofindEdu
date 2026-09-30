@@ -29,7 +29,7 @@ export const generateRecommendations = async (studentId, limit = 10) => {
     // Fetch candidate nodes
     let candidates = await CareerPathNode.find(query)
       .select(
-        "title slug nodeType description cost duration successMetrics popularityScore applicableQualifications applicableStreams applicableFinancialCategories applicableRegions applicableTimeframes"
+        "title slug nodeType description duration popularityScore applicableQualifications applicableStreams applicableFinancialCategories applicableRegions applicableTimeframes"
       )
       .limit(limit * 3)
       .lean();

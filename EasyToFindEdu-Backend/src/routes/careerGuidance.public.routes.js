@@ -5,6 +5,9 @@ import {
   searchCourses,
   getCourseDetails,
   submitAnswers,
+  getNodes,
+  getNodeDetail,
+  getCareerAreas,
 } from "../controllers/careerGuidance.controller.js";
 import { careerPublicLimiter, searchLimiter, questionSubmissionLimiter } from "../middlewares/careerRateLimiter.middleware.js";
 import validate from "../middlewares/validate.js";
@@ -410,6 +413,37 @@ router.get(
       new ApiResponse(200, courses, "Quick courses retrieved successfully")
     );
   })
+);
+
+/**
+ * GET /api/v1/career-guidance/nodes
+ * Browse career nodes — public, no auth
+ * Query: query, qualification, stream, nodeType, difficulty, sortBy, page, limit
+ */
+router.get(
+  "/nodes",
+  searchLimiter,
+  getNodes
+);
+
+/**
+ * GET /api/v1/career-guidance/nodes/:nodeId
+ * Get single career node — public
+ */
+router.get(
+  "/nodes/:nodeId",
+  careerPublicLimiter,
+  getNodeDetail
+);
+
+/**
+ * GET /api/v1/career-guidance/career-areas
+ * List career area categories — public
+ */
+router.get(
+  "/career-areas",
+  careerPublicLimiter,
+  getCareerAreas
 );
 
 /**
