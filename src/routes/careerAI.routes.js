@@ -1,6 +1,6 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
-import { authenticateStudent } from "../middlewares/AuthenticateStudents.js";
+import { authenticateStudentOptionalOptional } from "../middlewares/authenticateStudentOptionalsOptional.js";
 import {
   listConversations,
   createConversation,
@@ -48,7 +48,7 @@ router.get("/quick-prompts", getQuickPrompts);
  */
 router.get(
   "/profile-context",
-  authenticateStudent,
+  authenticateStudentOptional,
   getProfileContext
 );
 
@@ -58,7 +58,7 @@ router.get(
  */
 router.get(
   "/conversations",
-  authenticateStudent,
+  authenticateStudentOptional,
   listConversations
 );
 
@@ -68,7 +68,7 @@ router.get(
  */
 router.post(
   "/conversations",
-  authenticateStudent,
+  authenticateStudentOptional,
   aiConversationLimiter,
   createConversation
 );
@@ -79,7 +79,7 @@ router.post(
  */
 router.get(
   "/conversations/:conversationId",
-  authenticateStudent,
+  authenticateStudentOptional,
   getConversation
 );
 
@@ -89,7 +89,7 @@ router.get(
  */
 router.post(
   "/conversations/:conversationId/messages",
-  authenticateStudent,
+  authenticateStudentOptional,
   aiChatLimiter,
   sendMessage
 );
@@ -100,7 +100,7 @@ router.post(
  */
 router.delete(
   "/conversations/:conversationId",
-  authenticateStudent,
+  authenticateStudentOptional,
   archiveConversation
 );
 
