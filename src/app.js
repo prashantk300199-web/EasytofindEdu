@@ -48,6 +48,7 @@ import instituteDraftRoutes from "./routes/instituteDraft.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
 
 import ApiResponse from "./utils/ApiResponse.js";
+import { isConfigured } from "./services/gemini.service.js";
 
 
 const app = express();
@@ -126,7 +127,6 @@ app.get("/api/v1/health", (req, res) => {
 });
 
 // Debug endpoint to check Gemini configuration
-import { isConfigured } from "./services/gemini.service.js";
 app.get("/api/v1/debug/gemini", (req, res) => {
   res.status(200).json({
     geminiConfigured: isConfigured(),
