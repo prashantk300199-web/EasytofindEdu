@@ -125,6 +125,17 @@ app.get("/api/v1/health", (req, res) => {
   );
 });
 
+// Debug endpoint to check Gemini configuration
+import { isConfigured } from "./services/gemini.service.js";
+app.get("/api/v1/debug/gemini", (req, res) => {
+  res.status(200).json({
+    geminiConfigured: isConfigured(),
+    geminiApiKey: process.env.GEMINI_API_KEY ? "SET (length: " + process.env.GEMINI_API_KEY.length + ")" : "NOT SET",
+    geminiModel: process.env.GEMINI_MODEL || "default",
+    envVars: Object.keys(process.env).filter(k => k.includes('GEMINI')),
+  });
+});
+
 // API Routes (Protected)
 app.use("/api/v1/auth", authRoutes);  // includes /google route
 // NOTE: /api/v1/owner/institutes must be registered BEFORE /api/v1/owner
