@@ -10,9 +10,10 @@ let model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 let apiUrl = process.env.GEMINI_API_URL || "https://generativelanguage.googleapis.com/v1beta/models";
 
 // Debug log on service initialization
-console.log(`[GEMINI] API Key configured: ${apiKey ? 'YES (length: ' + apiKey.length + ')' : 'NO'}`);
+console.log(`[GEMINI] API Key configured: ${apiKey ? 'YES (length: ' + apiKey.length + ', first 5 chars: ' + apiKey.substring(0,5) + ')' : 'NO'}`);
 console.log(`[GEMINI] Model: ${model}`);
 console.log(`[GEMINI] API URL: ${apiUrl}`);
+console.log(`[GEMINI] Build info: ${new Date().toISOString()}`);
 
 export function configureGemini({ key, modelName, url }) {
   if (key) apiKey = key;
