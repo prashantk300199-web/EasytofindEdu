@@ -1,6 +1,6 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
-import { authenticateStudentOptionalOptional } from "../middlewares/authenticateStudentOptionalsOptional.js";
+import { authenticateStudentOptional } from "../middlewares/authenticateStudentsOptional.js";
 import {
   listConversations,
   createConversation,
