@@ -21,7 +21,9 @@ export function configureGemini({ key, modelName, url }) {
 }
 
 export function isConfigured() {
-  return Boolean(apiKey && apiKey.length > 10);
+  const configured = Boolean(apiKey && apiKey.length > 10);
+  console.log(`[GEMINI] isConfigured() called - apiKey exists: ${Boolean(apiKey)}, length: ${apiKey?.length || 0}, configured: ${configured}`);
+  return configured;
 }
 
 const SYSTEM_PROMPT = `You are a knowledgeable and empathetic career counselor AI assistant for EasyToFindEdu, an Indian education platform. You help students from Class 10 onwards explore careers, understand educational paths, and plan their futures.
