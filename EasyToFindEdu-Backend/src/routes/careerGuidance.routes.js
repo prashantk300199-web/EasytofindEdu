@@ -14,7 +14,7 @@ import {
 } from "../controllers/careerGuidance.controller.js";
 import validate from "../middlewares/validate.js";
 import { savePathValidator } from "../validators/careerGuidanceValidator.js";
-import { authenticateStudent } from "../middlewares/AuthenticateStudents.js";
+import { authenticateStudentOptional } from "../middlewares/authenticateStudentsOptional.js";
 
 const router = Router();
 
