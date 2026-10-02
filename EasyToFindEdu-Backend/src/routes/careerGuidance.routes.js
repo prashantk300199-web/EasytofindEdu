@@ -19,7 +19,7 @@ import { authenticateStudentOptional } from "../middlewares/authenticateStudents
 const router = Router();
 
 /**
- * PROTECTED ROUTES - Student must be logged in
+ * PROTECTED ROUTES - Student must be logged in (email verification not required)
  */
 
 /**
@@ -29,7 +29,7 @@ const router = Router();
  */
 router.get(
   "/recommendations",
-  authenticateStudent,
+  authenticateStudentOptional,
   getRecommendations
 );
 
@@ -39,7 +39,7 @@ router.get(
  */
 router.get(
   "/path/:nodeId/next",
-  authenticateStudent,
+  authenticateStudentOptional,
   getNextPaths
 );
 
@@ -49,7 +49,7 @@ router.get(
  */
 router.get(
   "/path/:nodeId/prerequisites",
-  authenticateStudent,
+  authenticateStudentOptional,
   getPrerequisites
 );
 
@@ -59,7 +59,7 @@ router.get(
  */
 router.post(
   "/save-path",
-  authenticateStudent,
+  authenticateStudentOptional,
   validate(savePathValidator),
   savePath
 );
@@ -71,7 +71,7 @@ router.post(
  */
 router.get(
   "/my-paths",
-  authenticateStudent,
+  authenticateStudentOptional,
   getSavedPaths
 );
 
@@ -81,7 +81,7 @@ router.get(
  */
 router.get(
   "/my-profile",
-  authenticateStudent,
+  authenticateStudentOptional,
   getMyProfile
 );
 
@@ -92,7 +92,7 @@ router.get(
  */
 router.get(
   "/roadmap/:nodeId",
-  authenticateStudent,
+  authenticateStudentOptional,
   getRoadmap
 );
 
