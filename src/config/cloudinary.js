@@ -67,11 +67,41 @@ export const uploadOnCloudinary = async (fileOrPath, options = {}) => {
   // If multer memory storage (buffer present)
   if (fileOrPath.buffer) {
     return new Promise((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream({ folder: options.folder || 'easytofindedu/blogs' }, (error, result) => {
-        if (error) return reject(error);
+      const uploadOptions = {
+        folder: options.folder || 'easytofindedu/blogs',
+        resource_type: options.resource_type || 'image',
+        timeout: 60000, // 60s
+      };
+
+      // Safety timeout — Cloudinary SDK timeout is a best-effort.
+      const timer = setTimeout(() => {
+        reject(new Error('Cloudinary upload timed out after 60s'));
+      }, 65000);
+
+      const stream = cloudinary.uploader.upload_stream(uploadOptions, (error, result) => {
+        clearTimeout(timer);
+        if (error) {
+          console.error('[cloudinary] upload_stream error:', error?.message || error);
+          return reject(error);
+        }
+        if (!result || !result.secure_url) {
+          console.error('[cloudinary] upload_stream returned no result/secure_url');
+          return reject(new Error('Cloudinary returned no URL'));
+        }
         resolve({ url: result.secure_url, publicId: result.public_id });
       });
-      stream.end(fileOrPath.buffer);
+
+      // Write the buffer BEFORE ending the stream. Some Cloudinary SDK
+      // versions don't flush the final-chunk-on-end pattern correctly,
+      // which silently drops the payload and resolves with no URL.
+      const buf = fileOrPath.buffer;
+      if (Buffer.isBuffer(buf) || buf instanceof Uint8Array) {
+        stream.write(buf);
+        stream.end();
+      } else {
+        // Fallback: some multer configs expose a Stream, not a Buffer
+        buf.pipe(stream);
+      }
     });
   }
 
@@ -80,7 +110,14 @@ export const uploadOnCloudinary = async (fileOrPath, options = {}) => {
     if (fileOrPath.startsWith('http')) {
       return { url: fileOrPath, publicId: '' };
     }
-    const result = await cloudinary.uploader.upload(fileOrPath, { folder: options.folder || 'easytofindedu/blogs' });
+    const result = await cloudinary.uploader.upload(fileOrPath, {
+      folder: options.folder || 'easytofindedu/blogs',
+      resource_type: options.resource_type || 'image',
+      timeout: 60000,
+    });
+    if (!result || !result.secure_url) {
+      throw new Error('Cloudinary returned no URL');
+    }
     return { url: result.secure_url, publicId: result.public_id };
   }
 

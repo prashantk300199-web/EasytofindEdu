@@ -123,20 +123,26 @@ export const uploadDraftFile = async (req, res) => {
     // Upload to Cloudinary
     const result = await uploadOnCloudinary(req.file, {
       folder: `institute-drafts/${ownerId}`,
-      resource_type: 'auto'
+      resource_type: 'auto',
     });
+
+    // Store file URL based on step and field
+    const fileUrl = result.url;
+    if (!fileUrl) {
+      console.error('[institute-draft.upload] Cloudinary returned no URL for owner', ownerId);
+      return res.status(502).json({
+        success: false,
+        message: 'File storage service returned no URL. Please try again.',
+      });
+    }
+    const stepKey = `step${stepNumber}`;
 
     // Get or create draft. Works for any status so the owner can keep
     // editing after submission.
     let draft = await InstituteDraft.findOne({ owner: ownerId }).sort({ lastSavedAt: -1 });
-
     if (!draft) {
       draft = new InstituteDraft({ owner: ownerId, status: 'draft' });
     }
-
-    // Store file URL based on step and field
-    const fileUrl = result.secure_url;
-    const stepKey = `step${stepNumber}`;
 
     if (!draft[stepKey]) {
       draft[stepKey] = {};
