@@ -49,7 +49,7 @@ export const getInstituteApplicationsService = async (filters = {}) => {
   const skip = (page - 1) * limit;
 
   const applications = await InstituteDraft.find(query)
-    .populate('ownerId', 'name email phone')
+    .populate('owner', 'name email phone')
     .populate('verifiedBy', 'name email')
     .sort({ submittedAt: -1, updatedAt: -1 })
     .skip(skip)
@@ -74,7 +74,7 @@ export const getInstituteApplicationsService = async (filters = {}) => {
  */
 export const getInstituteApplicationByIdService = async (id) => {
   const application = await InstituteDraft.findById(id)
-    .populate('ownerId', 'name email phone')
+    .populate('owner', 'name email phone')
     .populate('verifiedBy', 'name email')
     .populate('verificationHistory.admin', 'name email')
     .lean();
@@ -160,13 +160,13 @@ export const approveApplicationService = async (id, adminId, adminName) => {
 
     facilities: draft.step7Facilities?.facilities || [],
 
-    createdBy: draft.ownerId,
+    createdBy: draft.owner,
     isActive: true,
     isApproved: true
   };
 
   await Institute.findOneAndUpdate(
-    { createdBy: draft.ownerId },
+    { createdBy: draft.owner },
     instituteData,
     { upsert: true, new: true }
   );
@@ -292,7 +292,7 @@ export const suspendApplicationService = async (id, adminId, adminName, reason) 
 
   // Update Institute record to mark as inactive
   await Institute.updateOne(
-    { createdBy: draft.ownerId },
+    { createdBy: draft.owner },
     { isActive: false }
   );
 

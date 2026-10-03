@@ -1,18 +1,16 @@
 import InstituteDraft from '../models/InstituteDraft.js';
 import { uploadOnCloudinary } from '../config/cloudinary.js';
 
-// Get draft for logged-in owner
+// Get draft for logged-in owner (any status — owner must be able to
+// re-open and edit a submitted/changes_requested application).
 export const getDraft = async (req, res) => {
   try {
     const ownerId = req.owner._id;
 
-    let draft = await InstituteDraft.findOne({
-      owner: ownerId,
-      status: 'draft'
-    }).sort({ lastSavedAt: -1 });
+    let draft = await InstituteDraft.findOne({ owner: ownerId }).sort({ lastSavedAt: -1 });
 
     if (!draft) {
-      // Create new draft if none exists
+      // No record at all — create a fresh one.
       draft = new InstituteDraft({
         owner: ownerId,
         status: 'draft',
@@ -36,7 +34,8 @@ export const getDraft = async (req, res) => {
   }
 };
 
-// Save draft (manual save or auto-save)
+// Save draft (manual save or auto-save). Works for any status so the
+// owner can keep editing a submitted or changes_requested application.
 export const saveDraft = async (req, res) => {
   try {
     const ownerId = req.owner._id;
@@ -58,13 +57,10 @@ export const saveDraft = async (req, res) => {
       step14Verification
     } = req.body;
 
-    let draft = await InstituteDraft.findOne({
-      owner: ownerId,
-      status: 'draft'
-    });
+    let draft = await InstituteDraft.findOne({ owner: ownerId }).sort({ lastSavedAt: -1 });
 
     if (!draft) {
-      draft = new InstituteDraft({ owner: ownerId });
+      draft = new InstituteDraft({ owner: ownerId, status: 'draft' });
     }
 
     // Update fields - Phase 6 supports all 14 steps
@@ -130,14 +126,12 @@ export const uploadDraftFile = async (req, res) => {
       resource_type: 'auto'
     });
 
-    // Get or create draft
-    let draft = await InstituteDraft.findOne({
-      owner: ownerId,
-      status: 'draft'
-    });
+    // Get or create draft. Works for any status so the owner can keep
+    // editing after submission.
+    let draft = await InstituteDraft.findOne({ owner: ownerId }).sort({ lastSavedAt: -1 });
 
     if (!draft) {
-      draft = new InstituteDraft({ owner: ownerId });
+      draft = new InstituteDraft({ owner: ownerId, status: 'draft' });
     }
 
     // Store file URL based on step and field
@@ -172,20 +166,15 @@ export const uploadDraftFile = async (req, res) => {
   }
 };
 
-// Submit draft for verification (final submission)
+// Submit draft for verification (final submission, or resubmit after
+// the owner edits a submitted / changes_requested application).
 export const submitDraft = async (req, res) => {
   try {
     const ownerId = req.owner._id;
 
-    // Find draft that can be submitted (draft or changes_requested)
-    const draft = await InstituteDraft.findOne({
-      ownerId: ownerId,
-      $or: [
-        { status: 'draft' },
-        { verificationStatus: 'draft' },
-        { verificationStatus: 'changes_requested' }
-      ]
-    });
+    // Find the owner's most recent draft. Owner can re-submit as long as
+    // the application isn't already verified, rejected, or suspended.
+    const draft = await InstituteDraft.findOne({ owner: ownerId }).sort({ lastSavedAt: -1 });
 
     if (!draft) {
       return res.status(404).json({
@@ -194,13 +183,15 @@ export const submitDraft = async (req, res) => {
       });
     }
 
-    // Check if already submitted or under review
-    if (draft.verificationStatus === 'submitted' ||
-        draft.verificationStatus === 'under_review' ||
-        draft.verificationStatus === 'verified') {
+    // Block re-submit if already approved, rejected, or suspended.
+    if (
+      draft.verificationStatus === 'verified' ||
+      draft.verificationStatus === 'rejected' ||
+      draft.verificationStatus === 'suspended'
+    ) {
       return res.status(400).json({
         success: false,
-        message: 'Application has already been submitted or is under review'
+        message: `Application cannot be resubmitted while status is "${draft.verificationStatus}"`
       });
     }
 
@@ -219,7 +210,7 @@ export const submitDraft = async (req, res) => {
       });
     }
 
-    // Update status to submitted
+    // Update status to submitted (or re-submitted)
     draft.status = 'submitted';
     draft.verificationStatus = 'submitted';
     draft.submittedAt = new Date();
@@ -237,8 +228,12 @@ export const submitDraft = async (req, res) => {
       draft.verificationHistory = [];
     }
 
+    const isResubmission = draft.verificationHistory.some(
+      (h) => h.action === 'submitted' || h.action === 'resubmitted'
+    );
+
     draft.verificationHistory.push({
-      action: 'submitted',
+      action: isResubmission ? 'resubmitted' : 'submitted',
       status: 'submitted',
       timestamp: new Date()
     });
@@ -247,7 +242,9 @@ export const submitDraft = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Registration submitted successfully. Your institute will be reviewed by our team.',
+      message: isResubmission
+        ? 'Application resubmitted successfully. Your updates will be reviewed by our team.'
+        : 'Registration submitted successfully. Your institute will be reviewed by our team.',
       data: draft
     });
   } catch (error) {
@@ -301,7 +298,7 @@ export const getDraftStatus = async (req, res) => {
       owner: ownerId
     })
     .sort({ updatedAt: -1, lastSavedAt: -1 })
-    .select('currentStep completionPercentage lastSavedAt submittedAt status step1InstituteInfo adminFeedback rejectionReason');
+    .select('_id currentStep completionPercentage lastSavedAt submittedAt status verificationStatus step1InstituteInfo adminFeedback rejectionReason verifiedAt verifiedBy');
 
     res.status(200).json({
       success: true,
