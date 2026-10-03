@@ -50,19 +50,69 @@ function getClient() {
 }
 
 /**
+ * Convert a buildStudentContext() result into a short system-prompt section.
+ * Returns null when there is no usable profile data.
+ */
+function formatProfileSection(ctx) {
+  if (!ctx || !ctx.hasProfile) return null;
+
+  const lines = [];
+  const basics = ctx.basics || {};
+  const cg = ctx.careerGuidance || {};
+  const prefs = cg.preferences || {};
+
+  if (basics.name) lines.push(`- Name: ${basics.name}`);
+  if (basics.educationLevel) lines.push(`- Education level: ${basics.educationLevel}`);
+  if (cg.stream) lines.push(`- Stream: ${cg.stream}`);
+  if (cg.interests && cg.interests.length) lines.push(`- Interests: ${cg.interests.join(", ")}`);
+  if (prefs.careerGoal) lines.push(`- Career goal: ${prefs.careerGoal}`);
+  if (prefs.budget) lines.push(`- Budget: ${prefs.budget}`);
+  if (prefs.timeframe) lines.push(`- Timeframe: ${prefs.timeframe}`);
+  if (prefs.relocation) lines.push(`- Relocation: ${prefs.relocation}`);
+  if (prefs.preferredCities && prefs.preferredCities.length) {
+    lines.push(`- Preferred cities: ${prefs.preferredCities.join(", ")}`);
+  }
+  if (basics.percentage) lines.push(`- Latest percentage / score: ${basics.percentage}`);
+
+  if (Array.isArray(ctx.savedCareers) && ctx.savedCareers.length) {
+    lines.push(`- Saved careers: ${ctx.savedCareers.map((c) => c.title).join(", ")}`);
+  }
+  if (Array.isArray(ctx.topRecommendations) && ctx.topRecommendations.length) {
+    lines.push(
+      `- Top recommendations for this student: ${ctx.topRecommendations.map((r) => r.title).join(", ")}`
+    );
+  }
+
+  if (lines.length === 0) return null;
+
+  return [
+    "",
+    "== ABOUT THIS STUDENT (use to personalise; do NOT recite these details back) ==",
+    ...lines,
+    "== END STUDENT CONTEXT ==",
+    "",
+    "Personalise your answer to this student when relevant. Do not start with \"Based on your profile\" or similar filler — just answer their question, with their context in mind.",
+  ].join("\n");
+}
+
+/**
  * Generate a response from Gemini given a conversation history.
  * @param {{role: "user" | "assistant" | "model" | "system", content: string}[]} messages
+ * @param {object|null} [studentContext] - Optional result from buildStudentContext().
  * @returns {Promise<string>} the assistant's reply text
  */
-export async function generateCounselorReply(messages) {
+export async function generateCounselorReply(messages, studentContext = null) {
   if (!Array.isArray(messages) || messages.length === 0) {
     throw new Error("messages must be a non-empty array");
   }
 
   const c = getClient();
+  const profileSection = formatProfileSection(studentContext);
+  const systemInstruction = SYSTEM_PROMPT + (profileSection || "");
+
   const model = c.getGenerativeModel({
     model: MODEL,
-    systemInstruction: SYSTEM_PROMPT,
+    systemInstruction,
   });
 
   // Convert history to Gemini format. Drop any "system" entries — they're

@@ -1,4 +1,5 @@
 import { generateCounselorReply, isCounselorConfigured } from "../services/gemini.service.js";
+import { buildStudentContext } from "../services/studentContextBuilder.service.js";
 import ApiError from "../utils/ApiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
@@ -12,6 +13,11 @@ const MAX_CONTENT_LEN = 4000;   // max chars per message
  *
  * The frontend owns the conversation history and sends it with each request.
  * No database persistence. No conversation IDs. No rate-limited fan-out.
+ *
+ * If a valid student JWT is present, the student's profile is fetched from
+ * the database and injected into Gemini's system prompt so replies can be
+ * personalised. If profile fetch fails or the student is anonymous, the
+ * request still succeeds with a generic counselor response.
  *
  * Response: { success: true, message: "..." }
  *   or on failure: { success: false, message: "AI Counselor is temporarily unavailable." }
@@ -52,6 +58,18 @@ export const chat = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Last message must be from the user");
   }
 
+  // If the optional-auth middleware attached a user, fetch their profile.
+  // Failures here are non-fatal — the AI will just answer generically.
+  let studentContext = null;
+  if (req.user && req.user._id) {
+    try {
+      studentContext = await buildStudentContext(req.user._id);
+    } catch (err) {
+      console.error("[counselor] profile fetch failed:", err?.message || err);
+      studentContext = null;
+    }
+  }
+
   if (!isCounselorConfigured()) {
     return res.status(503).json({
       success: false,
@@ -60,7 +78,7 @@ export const chat = asyncHandler(async (req, res) => {
   }
 
   try {
-    const reply = await generateCounselorReply(cleaned);
+    const reply = await generateCounselorReply(cleaned, studentContext);
     return res.status(200).json({ success: true, message: reply });
   } catch (err) {
     console.error("[counselor] Gemini error:", err?.message || err);
