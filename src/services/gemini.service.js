@@ -1,145 +1,131 @@
-import fetch from "node-fetch";
+// Clean, simple Gemini service for the AI Counselor.
+// Uses the official @google/generative-ai SDK.
+// The API key is read ONLY from server-side env (GEMINI_API_KEY).
+// It is never exposed to the browser.
 
-const logger = {
-  info: (msg, data = {}) => console.log(`[INFO] ${new Date().toISOString()} - ${msg}`, data),
-  error: (msg, error = {}) => console.error(`[ERROR] ${new Date().toISOString()} - ${msg}`, error),
-};
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-let apiKey = process.env.GEMINI_API_KEY || "";
-let model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
-let apiUrl = process.env.GEMINI_API_URL || "https://generativelanguage.googleapis.com/v1beta/models";
+const MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+const API_KEY = process.env.GEMINI_API_KEY || "";
 
-// Debug log on service initialization
-console.log(`[GEMINI] API Key configured: ${apiKey ? 'YES (length: ' + apiKey.length + ', first 5 chars: ' + apiKey.substring(0,5) + ')' : 'NO'}`);
-console.log(`[GEMINI] Model: ${model}`);
-console.log(`[GEMINI] API URL: ${apiUrl}`);
-console.log(`[GEMINI] Build info: ${new Date().toISOString()}`);
+const SYSTEM_PROMPT = `You are the AI Career Counselor for EasyToFindEdu, an Indian education platform that helps students discover careers, courses, colleges, and entrance exams.
 
-export function configureGemini({ key, modelName, url }) {
-  if (key) apiKey = key;
-  if (modelName) model = modelName;
-  if (url) apiUrl = url;
+Your job is to give practical, structured, and honest career guidance to Indian students (typically Class 9 onwards, including graduates and working professionals exploring career changes).
+
+You help with:
+- career selection and career paths
+- choosing the right courses and degrees
+- colleges, institutes, and universities
+- entrance examinations (JEE, NEET, CAT, GATE, UPSC, banking, state exams, etc.)
+- skills to develop
+- study planning and learning roadmaps
+- internships and first jobs
+- higher education (India and abroad)
+- competitive exams preparation
+- technology careers and emerging fields
+
+How you answer:
+- Use clear **bold headings** to structure longer answers.
+- Use short bullet points and short paragraphs.
+- Prefer Indian context: use INR for costs, refer to CBSE/ICSE/State boards, JEE/NEET/UPSC, IITs/NITs/AIIMS, IIIT, IIM, etc.
+- Be encouraging but realistic. Avoid hype and false promises.
+- When the user is unsure ("I don't know what to do"), ask gentle clarifying questions before suggesting paths.
+- When comparing options, present facts neutrally. Do not declare a "winner".
+- When discussing exams, fees, salaries, cutoffs, or seat counts, tell the user to verify from the official source — do not invent exact numbers.
+- If you do not know something, say so clearly. Do not fabricate.
+- Keep answers focused and skimmable. Avoid long preambles.
+
+You do NOT have access to private EasyToFindEdu databases unless the user (or the system) provides that data in the conversation. If the user asks about specific colleges or listings, guide them to use the search and explore pages on the site.
+
+Stay strictly within education and careers. For unrelated topics, politely redirect the user back to career guidance.`;
+
+let client = null;
+function getClient() {
+  if (client) return client;
+  if (!API_KEY) {
+    throw new Error("GEMINI_API_KEY is not configured on the server.");
+  }
+  client = new GoogleGenerativeAI(API_KEY);
+  return client;
 }
 
-export function isConfigured() {
-  const configured = Boolean(apiKey && apiKey.length > 10);
-  console.log(`[GEMINI] isConfigured() called - apiKey exists: ${Boolean(apiKey)}, length: ${apiKey?.length || 0}, configured: ${configured}`);
-  return configured;
-}
-
-const SYSTEM_PROMPT = `You are a knowledgeable and empathetic career counselor AI assistant for EasyToFindEdu, an Indian education platform. You help students from Class 10 onwards explore careers, understand educational paths, and plan their futures.
-
-IMPORTANT RULES:
-1. NEVER invent real-world facts (exam dates, fees, seat counts, salary figures, college cutoffs). If you don't know, say so clearly and suggest verifying from official sources.
-2. ALWAYS ground answers in the student's provided profile data (education, interests, skills, constraints).
-3. When discussing institutes, courses, or exams, note that the student should verify details from official websites.
-4. NEVER claim a career is "perfect" or "guaranteed success". Use "Profile Match" for numerical scores, not probability.
-5. Be encouraging but realistic. Acknowledge challenges and constraints.
-6. Ask clarifying questions when the student's profile is incomplete.
-7. Keep responses concise but thorough. Use plain language accessible to Indian students.
-8. When recommending actions (explore career, compare, add to roadmap), format as simple action suggestions the frontend can render.
-9. Format your responses with clear sections using **bold headings** for readability.
-10. For Indian context: use INR for costs, understand Indian education system (CBSE/ICSE/State boards, JEE/NEET/UPSC, IITs/NITs/AIIMS etc.)
-11. NEVER share, repeat, or store personal data beyond the current conversation.
-12. If the student asks about information outside education/careers, politely redirect to career guidance topics.
-13. When asked to compare careers, present information neutrally without declaring a "winner".
-14. When suggesting learning plans, ask about available time and current commitments.
-15. For roadmap generation, always respect the student's current education level and existing progress.`;
-
-export async function generateResponse(messages, options = {}) {
-  if (!isConfigured()) {
-    throw new Error("Gemini API is not configured. Please set GEMINI_API_KEY.");
+/**
+ * Generate a response from Gemini given a conversation history.
+ * @param {{role: "user" | "assistant" | "model" | "system", content: string}[]} messages
+ * @returns {Promise<string>} the assistant's reply text
+ */
+export async function generateCounselorReply(messages) {
+  if (!Array.isArray(messages) || messages.length === 0) {
+    throw new Error("messages must be a non-empty array");
   }
 
-  const { temperature = 0.7, maxOutputTokens = 2048, topP = 0.9, topK = 40 } = options;
+  const c = getClient();
+  const model = c.getGenerativeModel({
+    model: MODEL,
+    systemInstruction: SYSTEM_PROMPT,
+  });
 
-  // Build the conversation history in Gemini format
-  const contents = messages
-    .filter((m) => m.role !== "system")
+  // Convert history to Gemini format. Drop any "system" entries — they're
+  // already handled via systemInstruction above.
+  const history = messages
+    .filter((m) => m && (m.role === "user" || m.role === "assistant" || m.role === "model"))
     .map((m) => ({
-      role: m.role === "model" ? "model" : "user",
-      parts: [{ text: m.content }],
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: String(m.content ?? "") }],
     }));
 
-  const body = {
-    contents,
+  if (history.length === 0) {
+    throw new Error("No valid messages to send to Gemini.");
+  }
+
+  // Last message must be from the user for chat.sendMessage.
+  const last = history[history.length - 1];
+  if (last.role !== "user") {
+    throw new Error("Last message must be from the user.");
+  }
+  const chatHistory = history.slice(0, -1);
+
+  const chat = model.startChat({
+    history: chatHistory,
     generationConfig: {
-      temperature: Math.min(Math.max(temperature, 0), 1),
-      maxOutputTokens: Math.min(maxOutputTokens, 8192),
-      topP: Math.min(Math.max(topP, 0), 1),
-      topK: Math.min(Math.max(topK, 1), 100),
+      temperature: 0.7,
+      maxOutputTokens: 2048,
+      topP: 0.9,
+      topK: 40,
     },
-    safetySettings: [
-      { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-      { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-      { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-      { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-    ],
+  });
+
+  // Retry on transient 5xx / network errors. Most user-facing failures are
+  // Google's "high demand" 503s, which usually clear within a few seconds.
+  // Up to 3 total attempts with exponential backoff (1.5s, 3s).
+  const transient = (err) => {
+    const msg = String(err?.message || err || "");
+    return /503|Service Unavailable|high demand|fetch failed|ETIMEDOUT|ECONNRESET|EAI_AGAIN/i.test(msg);
   };
 
-  // Prepend system prompt as first user message if not already present
-  if (contents.length > 0 && contents[0].role !== "user") {
-    contents.unshift({
-      role: "user",
-      parts: [{ text: SYSTEM_PROMPT }],
-    });
-  } else if (contents.length === 0) {
-    contents.push({
-      role: "user",
-      parts: [{ text: SYSTEM_PROMPT + "\n\nStart the conversation." }],
-    });
-  }
-
-  const url = `${apiUrl}/${model}:generateContent?key=${apiKey}`;
-
-  let response;
-  let retries = 0;
-  const maxRetries = 2;
-
-  while (retries <= maxRetries) {
+  let lastErr;
+  for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-        timeout: 30000,
-      });
-      break;
+      const result = await chat.sendMessage(last.parts[0].text);
+      const text = result?.response?.text?.();
+      if (!text || !text.trim()) {
+        throw new Error("Gemini returned an empty response.");
+      }
+      return text.trim();
     } catch (err) {
-      retries++;
-      if (retries > maxRetries) throw err;
-      await new Promise((r) => setTimeout(r, 1000 * retries));
+      lastErr = err;
+      if (transient(err) && attempt < 2) {
+        await new Promise((r) => setTimeout(r, 1500 * Math.pow(2, attempt)));
+        continue;
+      }
+      throw err;
     }
   }
-
-  if (!response?.ok) {
-    let errorDetail = "";
-    try {
-      const errBody = await response?.json();
-      errorDetail = errBody?.error?.message || JSON.stringify(errBody);
-    } catch { /* ignore */ }
-    logger.error("Gemini API error", { status: response?.status, detail: errorDetail, url: url });
-    throw new Error(`Gemini API error (${response?.status}): ${errorDetail || "Unknown error"}`);
-  }
-
-  const data = await response.json();
-
-  if (!data.candidates || data.candidates.length === 0) {
-    if (data.promptFeedback?.blockReason) {
-      throw new Error(`Content blocked: ${data.promptFeedback.blockReason}`);
-    }
-    throw new Error("No response from Gemini. Please try again.");
-  }
-
-  const candidate = data.candidates[0];
-  if (candidate.finishReason === "SAFETY" || candidate.finishReason === "RECITATION") {
-    throw new Error("Your message could not be processed. Please rephrase and try again.");
-  }
-
-  const text = candidate.content?.parts?.[0]?.text || "";
-  logger.info("Gemini response generated", { tokens: text.length });
-
-  return text;
+  throw lastErr;
 }
 
-export default { generateResponse, configureGemini, isConfigured };
+export function isCounselorConfigured() {
+  return Boolean(API_KEY && API_KEY.length > 10);
+}
+
+export default { generateCounselorReply, isCounselorConfigured };

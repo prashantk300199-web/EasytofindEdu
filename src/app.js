@@ -31,7 +31,7 @@ import careerGuidanceRoutes from "./routes/careerGuidance.routes.js";
 import careerGuidanceAdminRoutes from "./routes/careerGuidance.admin.routes.js";
 import careerProgramPublicRoutes from "./routes/careerProgram.public.routes.js";
 import careerProgramAdminRoutes from "./routes/careerProgram.admin.routes.js";
-import careerAIRoutes from "./routes/careerAI.routes.js";
+import careerCounselorRoutes from "./routes/careerCounselor.routes.js";
 import enquiryRoutes from "./routes/enquiry.routes.js";
 import publicRoutes from "./routes/public.routes.js";
 import admissionRoutes from "./routes/admission.routes.js";
@@ -48,7 +48,6 @@ import instituteDraftRoutes from "./routes/instituteDraft.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
 
 import ApiResponse from "./utils/ApiResponse.js";
-import { isConfigured } from "./services/gemini.service.js";
 
 
 const app = express();
@@ -126,16 +125,6 @@ app.get("/api/v1/health", (req, res) => {
   );
 });
 
-// Debug endpoint to check Gemini configuration
-app.get("/api/v1/debug/gemini", (req, res) => {
-  res.status(200).json({
-    geminiConfigured: isConfigured(),
-    geminiApiKey: process.env.GEMINI_API_KEY ? "SET (length: " + process.env.GEMINI_API_KEY.length + ")" : "NOT SET",
-    geminiModel: process.env.GEMINI_MODEL || "default",
-    envVars: Object.keys(process.env).filter(k => k.includes('GEMINI')),
-  });
-});
-
 // API Routes (Protected)
 app.use("/api/v1/auth", authRoutes);  // includes /google route
 // NOTE: /api/v1/owner/institutes must be registered BEFORE /api/v1/owner
@@ -176,7 +165,7 @@ app.use("/api/v1/career-guidance", careerGuidancePublicRoutes);
 app.use("/api/v1/career-guidance", careerGuidanceRoutes);
 app.use("/api/v1/admin/career", careerGuidanceAdminRoutes);
 app.use("/api/v1/cg", cgRoutes);
-app.use("/api/v1/career-ai", careerAIRoutes);
+app.use("/api/v1/career/counselor", careerCounselorRoutes);
 
 app.use(express.static(path.join(__dirname, '../public')));
 
