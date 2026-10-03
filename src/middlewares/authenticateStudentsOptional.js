@@ -32,7 +32,7 @@ export const authenticateStudentOptional = async (req, res, next) => {
     }
 
     req.student = student;
-    req.user = student;
+    req.user = student; // Set both for compatibility with controllers that use req.user
     next();
   } catch (error) {
     if (error.name === "JsonWebTokenError") {
