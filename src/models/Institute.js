@@ -61,14 +61,20 @@ const academicSchema = new mongoose.Schema({
 
 const instituteSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  logo: { 
+  logo: {
     publicId: String,
-    url: String 
+    url: String
   },
-  coverImage: { 
+  coverImage: {
     publicId: String,
-    url: String 
+    url: String
   },
+  // Additive — gallery block on the public detail page reads this.
+  // Populated from step13Gallery.galleryFiles by the approval transform.
+  galleryImages: [{
+    publicId: String,
+    url: String
+  }],
   establishedYear: { type: Number, required: true },
   directorName: String,
   websiteUrl: String,
@@ -78,6 +84,9 @@ const instituteSchema = new mongoose.Schema({
 
   location: locationSchema,
   facilities: facilitySchema,
+  // Additive — preserves custom facility strings (e.g. "Dance Studio")
+  // that don't map to the booleans object above.
+  facilityList: [String],
   academicInfo: academicSchema,
   transparency: transparencySchema,
   

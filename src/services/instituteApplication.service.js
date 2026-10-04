@@ -1,6 +1,7 @@
 import InstituteDraft from '../models/InstituteDraft.js';
 import Institute from '../models/Institute.js';
 import ApiError from '../utils/ApiError.js';
+import { buildInstituteUpdateFromDraft } from '../utils/instituteTransform.js';
 
 /**
  * Get institute applications with pagination, search, and filters
@@ -129,46 +130,15 @@ export const approveApplicationService = async (id, adminId, adminName) => {
 
   await draft.save();
 
-  // Create or update Institute record for public access
-  // This will be used in Phase 9 for public institute listing
-  const instituteData = {
-    name: draft.step1InstituteInfo.instituteName,
-    description: draft.step1InstituteInfo.description,
-    logo: draft.step1InstituteInfo.logoFile,
-    coverImage: draft.step1InstituteInfo.coverImageFile,
-    establishedYear: draft.step1InstituteInfo.establishedYear,
-
-    category: draft.step2Category?.primaryCategory,
-    subcategories: draft.step2Category?.subcategories || [],
-
-    location: {
-      state: draft.step3LocationContact?.state,
-      cityName: draft.step3LocationContact?.city,
-      areaName: draft.step3LocationContact?.area,
-      subareaName: draft.step3LocationContact?.subarea,
-      pincode: draft.step3LocationContact?.pincode,
-      fullAddress: draft.step3LocationContact?.fullAddress,
-      landmark: draft.step3LocationContact?.landmark
-    },
-
-    contact: {
-      email: draft.step3LocationContact?.email,
-      phone: draft.step3LocationContact?.phone,
-      alternatePhone: draft.step3LocationContact?.alternatePhone,
-      website: draft.step3LocationContact?.website
-    },
-
-    facilities: draft.step7Facilities?.facilities || [],
-
-    createdBy: draft.owner,
-    isActive: true,
-    isApproved: true
-  };
+  // Create or update Institute record for public access.
+  // The transform is shared with scripts/rebuildInstitutesFromDrafts.js so
+  // already-approved institutes can be re-synced after a fix without re-submission.
+  const update = buildInstituteUpdateFromDraft(draft);
 
   await Institute.findOneAndUpdate(
     { createdBy: draft.owner },
-    instituteData,
-    { upsert: true, new: true }
+    update,
+    { upsert: true, new: true, runValidators: true }
   );
 
   return draft;
