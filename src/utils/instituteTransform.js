@@ -62,7 +62,10 @@ export function buildInstituteUpdateFromDraft(draft) {
   // Identity
   if (s1.instituteName) $set.name = s1.instituteName;
   if (s1.about) $set.about = s1.about;
-  if (s1.establishedYear) $set.establishedYear = s1.establishedYear;
+  // establishedYear is optional — fall back to current year so drafts that
+  // skipped it don't fail the upsert when runValidators is on.
+  const establishedYear = s1.establishedYear || new Date().getFullYear();
+  $set.establishedYear = establishedYear;
   if (s1.totalBranches != null && s1.totalBranches !== '') $set.totalBranches = s1.totalBranches;
   if (s1.websiteUrl) $set.websiteUrl = s1.websiteUrl;
   else if (s13.website) $set.websiteUrl = s13.website;
