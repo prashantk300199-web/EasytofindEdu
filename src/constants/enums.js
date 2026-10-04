@@ -49,6 +49,12 @@ export const INSTITUTE_OWNER_STATUS = {
   BLOCKED: "blocked"
 };
 
+export const COLLEGE_OWNER_STATUS = {
+  PENDING: "pending",
+  VERIFIED: "verified",
+  BLOCKED: "blocked"
+};
+
 export const INSTITUTE_VERIFICATION_STATUS = {
   DRAFT: "draft",
   SUBMITTED: "submitted",

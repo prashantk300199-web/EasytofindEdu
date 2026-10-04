@@ -79,10 +79,10 @@ const collegeSchema = new mongoose.Schema(
       {
         // Reference to the Master Course
         course: { type: mongoose.Schema.Types.ObjectId, ref: "CollegeCourse", required: true },
-        
+
         // Accepted Exams exactly as you requested
         examsAccepted: [{
-          type: String, 
+          type: String,
         }],
 
         // Detailed Fee Structure
@@ -95,7 +95,7 @@ const collegeSchema = new mongoose.Schema(
           otherFees: { type: Number, default: 0 },
           totalYearlyExpense: { type: Number, required: true }
         },
-        
+
         // Exhaustive Cutoff Data
         cutoffs: [
           {
@@ -111,7 +111,18 @@ const collegeSchema = new mongoose.Schema(
           }
         ]
       }
-    ]
+    ],
+
+    // ── 6. OWNER-SUBMITTED COLLEGE FIELDS (set by approval transform) ──
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'CollegeOwner' },
+    isActive: { type: Boolean, default: true },
+    isApproved: { type: Boolean, default: false },
+    verificationStatus: {
+      type: String,
+      enum: ['draft', 'submitted', 'under_review', 'changes_requested', 'verified', 'rejected', 'suspended'],
+      default: 'verified', // legacy admin-curated colleges default to verified
+    },
+    rejectionReason: { type: String },
   },
   { 
     timestamps: true 

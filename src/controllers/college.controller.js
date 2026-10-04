@@ -49,12 +49,20 @@ export const getAllColleges = async (req, res) => {
     } = req.query;
 
     let query = {};
-    
+
+    // Public filter — only approved + active colleges appear on /colleges.
+    // Legacy admin-curated colleges have no isApproved/isActive set, so we
+    // accept missing values as "approved + active" via $ne: false / $ne: true.
+    query.$and = [
+      { $or: [{ isApproved: { $exists: false } }, { isApproved: { $ne: false } }] },
+      { $or: [{ isActive: { $exists: false } }, { isActive: { $ne: false } }] },
+    ];
+
     // Filters
     if (state) query["contact.address"] = { $regex: state, $options: "i" };
     if (collegeType) query.collegeType = collegeType;
     if (ownershipType) query.ownershipType = ownershipType;
-    
+
     // Search by Name or Short Name
     if (search) {
       query.$or = [
@@ -95,10 +103,18 @@ export const getAllColleges = async (req, res) => {
 };
 
 // @desc    Get a single College by ID (Deep Populate)
-// @route   GET /api/v1/colleges/:id
 export const getCollegeById = async (req, res) => {
   try {
-    const college = await CollegeProfile.findById(req.params.id)
+    const college = await CollegeProfile.findOne({
+      _id: req.params.id,
+      $or: [
+        { isApproved: { $exists: false } },
+        { isApproved: { $ne: false } },
+      ],
+      $and: [
+        { $or: [{ isActive: { $exists: false } }, { isActive: { $ne: false } }] },
+      ],
+    })
       .populate({
         path: "coursesOffered.course",
         model: "CollegeCourse", // 🔥 FORCE MONGOOSE TO FIND THIS MODEL

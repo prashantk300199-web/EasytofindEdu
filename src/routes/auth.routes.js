@@ -8,6 +8,7 @@ import env from '../config/env.js';
 import Students from '../models/Students.js';
 import User from '../models/User.js';
 import InstituteOwner from '../models/InstituteOwner.js';
+import CollegeOwner from '../models/CollegeOwner.js';
 import ApiResponse from '../utils/ApiResponse.js';
 import ApiError from '../utils/ApiError.js';
 import { COOKIE_OPTIONS } from '../constants/api.constants.js';
@@ -51,6 +52,9 @@ router.post("/google", async (req, res, next) => {
     } else if (role === 'institute_owner') {
       Model = InstituteOwner;
       modelName = 'InstituteOwner';
+    } else if (role === 'college_owner') {
+      Model = CollegeOwner;
+      modelName = 'CollegeOwner';
     } else {
       throw new ApiError(400, 'Invalid role');
     }
@@ -79,8 +83,8 @@ router.post("/google", async (req, res, next) => {
         }
       };
 
-      // For User and InstituteOwner models, password is required, so generate a random one
-      if (role === 'owner' || role === 'institute_owner') {
+      // For User, InstituteOwner and CollegeOwner models, password is required, so generate a random one
+      if (role === 'owner' || role === 'institute_owner' || role === 'college_owner') {
         userData.password = crypto.randomBytes(32).toString('hex');
       }
 
@@ -100,6 +104,11 @@ router.post("/google", async (req, res, next) => {
           if (!referrer) {
             referrer = await InstituteOwner.findOne({ referralCode });
             ReferrerModel = InstituteOwner;
+          }
+
+          if (!referrer) {
+            referrer = await CollegeOwner.findOne({ referralCode });
+            ReferrerModel = CollegeOwner;
           }
 
           if (referrer) {

@@ -3,6 +3,7 @@ import env from "../config/env.js";
 import User from "../models/User.js";
 import Admin from "../models/Admin.js";
 import InstituteOwner from "../models/InstituteOwner.js"; // Add this import
+import CollegeOwner from "../models/CollegeOwner.js";
 import ApiError from "../utils/ApiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
   
@@ -216,16 +217,68 @@ export const authenticateInstituteOwner = asyncHandler(async (req, res, next) =>
     if (error instanceof ApiError) {
       throw error;
     }
-    
+
     logger.error("Institute Owner token verification failed", { error: error.message });
-    
+
     if (error.name === 'TokenExpiredError') {
       throw new ApiError(401, "Token has expired. Please login again.");
     }
     if (error.name === 'JsonWebTokenError') {
       throw new ApiError(401, "Invalid token. Please login again.");
     }
-    
+
+    throw new ApiError(401, "Authentication failed. Please login again.");
+  }
+});
+
+
+// College Owner Authentication — mirrors authenticateInstituteOwner.
+export const authenticateCollegeOwner = asyncHandler(async (req, res, next) => {
+  let token = null;
+
+  if (req.headers.authorization) {
+    const authHeader = req.headers.authorization;
+    if (authHeader.startsWith('Bearer ')) {
+      token = authHeader.slice(7);
+    } else {
+      token = authHeader;
+    }
+  }
+
+  if (!token && req.cookies?.collegeOwnerToken) {
+    token = req.cookies.collegeOwnerToken;
+  }
+
+  if (!token) {
+    throw new ApiError(401, "Access denied. No token provided.");
+  }
+
+  try {
+    const decoded = jwt.verify(token, env.jwt.secret);
+
+    if (decoded.role !== "college_owner") {
+      throw new ApiError(403, "Access denied. College owner role required.");
+    }
+
+    const owner = await CollegeOwner.findById(decoded.id);
+    if (!owner) {
+      throw new ApiError(401, "College owner not found.");
+    }
+
+    if (owner.status === "blocked") {
+      throw new ApiError(403, "Your account has been blocked.");
+    }
+
+    req.owner = owner;
+    next();
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    if (error.name === 'TokenExpiredError') {
+      throw new ApiError(401, "Token has expired. Please login again.");
+    }
+    if (error.name === 'JsonWebTokenError') {
+      throw new ApiError(401, "Invalid token. Please login again.");
+    }
     throw new ApiError(401, "Authentication failed. Please login again.");
   }
 });

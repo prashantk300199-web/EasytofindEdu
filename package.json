@@ -12,7 +12,8 @@
     "seed:career:force": "node src/scripts/seedCareerGuidanceData.js --force",
     "seed:all": "npm run seed && npm run seed:career",
     "migrate:phase6": "node src/scripts/migratePhase6InstituteDrafts.js",
-    "rebuild:institutes": "node scripts/rebuildInstitutesFromDrafts.js"
+    "rebuild:institutes": "node scripts/rebuildInstitutesFromDrafts.js",
+    "rebuild:colleges": "node scripts/rebuildCollegesFromDrafts.js"
   },
   "keywords": [
     "hostel",

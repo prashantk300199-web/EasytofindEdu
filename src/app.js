@@ -47,6 +47,9 @@ import walletRoutes from "./routes/wallet.routes.js";
 import scheduleVisitRoutes from "./routes/scheduleVisit.routes.js";
 import instituteDraftRoutes from "./routes/instituteDraft.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
+import collegeAuthRoutes from "./routes/college.auth.routes.js";
+import collegeDraftRoutes from "./routes/collegeDraft.routes.js";
+import adminCollegeApplicationRoutes from "./routes/admin.collegeApplication.routes.js";
 
 import ApiResponse from "./utils/ApiResponse.js";
 
@@ -145,8 +148,11 @@ app.use("/api/v1/admin/institute-owners", adminInstituteOwnerRoutes);
 app.use("/api/v1/admin/hostels", adminHostelRoutes);
 app.use("/api/v1/admin/institutes", adminInstituteRoutes);
 app.use("/api/admin/institute-applications", adminInstituteApplicationRoutes);
+app.use("/api/admin/college-applications", adminCollegeApplicationRoutes);
 app.use("/api/v1/institutes", instituteRoutes);
 app.use("/api/v1/institute/auth", instituteAuthRoutes);
+app.use("/api/v1/college/auth", collegeAuthRoutes);
+app.use("/api/v1/college-draft", collegeDraftRoutes);
 app.use("/api/v1/student/auth", studentAuthRoutes);
 app.use("/api/v1/enquiries", enquiryRoutes);
 app.use("/api/v1/admissions", admissionRoutes);
