@@ -135,11 +135,31 @@ export const approveApplicationService = async (id, adminId, adminName) => {
   // already-approved institutes can be re-synced after a fix without re-submission.
   const update = buildInstituteUpdateFromDraft(draft);
 
-  await Institute.findOneAndUpdate(
-    { createdBy: draft.owner },
-    update,
-    { upsert: true, new: true, runValidators: true }
-  );
+  try {
+    await Institute.findOneAndUpdate(
+      { createdBy: draft.owner },
+      update,
+      { upsert: true, new: true, runValidators: true }
+    );
+  } catch (err) {
+    // Revert the draft to its prior status so the admin can fix and retry
+    // without DB surgery — otherwise the draft is stuck "verified" with no
+    // matching Institute document.
+    draft.verificationStatus = 'submitted';
+    draft.verifiedAt = undefined;
+    draft.verifiedBy = undefined;
+    // Drop the bogus history entry we just added.
+    draft.verificationHistory.pop();
+    await draft.save().catch(() => {});
+
+    // Surface the real Mongoose error message to the admin UI instead of a
+    // generic 500. Trim noisy validation stacks.
+    const detail = (err && (err.message || err.toString())) || 'Unknown error';
+    throw new ApiError(
+      400,
+      `Institute record could not be created: ${detail}. The application has been reset to "submitted" — please review the draft data and try again.`
+    );
+  }
 
   return draft;
 };
