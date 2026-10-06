@@ -77,8 +77,10 @@ const collegeSchema = new mongoose.Schema(
     // ── 5. COURSES OFFERED (Linked with Master Course DB) ──
     coursesOffered: [
       {
-        // Reference to the Master Course
-        course: { type: mongoose.Schema.Types.ObjectId, ref: "CollegeCourse", required: true },
+        // Reference to the Master Course (admin-curated colleges). Optional so
+        // owner-submitted colleges — which don't have a CollegeCourse doc —
+        // can still upsert a record via the approval transform.
+        course: { type: mongoose.Schema.Types.ObjectId, ref: "CollegeCourse" },
 
         // Accepted Exams exactly as you requested
         examsAccepted: [{
@@ -87,31 +89,36 @@ const collegeSchema = new mongoose.Schema(
 
         // Detailed Fee Structure
         fees: {
-          tuitionFee: { type: Number, required: true },
+          tuitionFee: { type: Number, default: 0 },
           examFee: { type: Number, default: 0 },
           securityFee: { type: Number, default: 0 },
           developmentFee: { type: Number, default: 0 },
           uniformLabCharges: { type: Number, default: 0 },
           otherFees: { type: Number, default: 0 },
-          totalYearlyExpense: { type: Number, required: true }
+          totalYearlyExpense: { type: Number, default: 0 }
         },
 
         // Exhaustive Cutoff Data
         cutoffs: [
           {
-            year: { type: Number, required: true },
-            round: { type: String }, // e.g., "Round 1", "Round 2"
-            category: { type: String }, // e.g., "General", "OBC", "SC", "ST"
-            quota: { type: String }, // "State", "AIQ", "Home State"
+            year: { type: Number },
+            round: { type: String },
+            category: { type: String },
+            quota: { type: String },
             stateQuotaCutoff: { type: Number },
             aiqCutoff: { type: Number },
             openingRank: { type: Number },
             closingRank: { type: Number },
-            percentile: { type: Number } // Percentile vs Rank Data
+            percentile: { type: Number }
           }
         ]
       }
     ],
+
+    // ── 5b. OWNER-SUBMITTED COURSES (set by the approval transform when a
+    // college owner submits via the 12-step registration; the data is
+    // self-contained so it doesn't need a CollegeCourse document reference).
+    ownerCourses: [mongoose.Schema.Types.Mixed],
 
     // ── 6. OWNER-SUBMITTED COLLEGE FIELDS (set by approval transform) ──
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'CollegeOwner' },

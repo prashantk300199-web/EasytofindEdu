@@ -108,23 +108,29 @@ export function buildCollegeUpdateFromDraft(draft) {
     };
   }
 
-  // ── Courses (built from step 4 + step 5 fees) ──
+  // ── Courses (built from step 4) ──
+  // Owner-submitted colleges don't have a CollegeCourse ObjectId, so we
+  // store the course data in a dedicated `ownerCourses` field. The
+  // existing `coursesOffered` array is reserved for admin-curated
+  // colleges that link to the CollegeCourse master DB.
   if (Array.isArray(s4.courses) && s4.courses.length) {
-    $set.coursesOffered = s4.courses
+    $set.ownerCourses = s4.courses
       .filter((c) => c && c.courseName)
       .map((c) => ({
-        course: c.courseName,
-        examsAccepted: c.entranceExam ? [c.entranceExam] : [],
-        fees: {
-          tuitionFee: c.courseFee || 0,
-          examFee: 0,
-          securityFee: 0,
-          developmentFee: 0,
-          uniformLabCharges: 0,
-          otherFees: 0,
-          totalYearlyExpense: c.courseFee || 0,
-        },
-        cutoffs: [],
+        name: c.courseName,
+        degree: c.degree,
+        stream: c.stream,
+        specialization: c.specialization,
+        duration: c.duration,
+        durationType: c.durationType,
+        eligibility: c.eligibility,
+        admissionMode: c.admissionMode,
+        entranceExam: c.entranceExam,
+        intakeSeats: c.intakeSeats,
+        courseFee: c.courseFee,
+        applicationDeadline: c.applicationDeadline,
+        description: c.description,
+        brochureFile: c.brochureFile,
       }));
   }
 
