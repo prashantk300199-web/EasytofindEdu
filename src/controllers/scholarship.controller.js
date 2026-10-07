@@ -20,7 +20,7 @@ import asyncHandler from "../utils/asyncHandler.js";
  */
 export const listScholarships = asyncHandler(async (req, res) => {
   const result = await searchScholarships(req.query);
-  res.status(200).json(new ApiResponse(200, result, "Scholarships retrieved successfully"));
+  res.status(200).json(new ApiResponse(200, "Scholarships retrieved successfully", result));
 });
 
 /**
@@ -30,7 +30,7 @@ export const listScholarships = asyncHandler(async (req, res) => {
 export const getFeatured = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit) || 6;
   const items = await getFeaturedScholarships(limit);
-  res.status(200).json(new ApiResponse(200, { items }, "Featured scholarships retrieved"));
+  res.status(200).json(new ApiResponse(200, "Featured scholarships retrieved", { items }));
 });
 
 /**
@@ -40,7 +40,7 @@ export const getFeatured = asyncHandler(async (req, res) => {
 export const getClosingSoon = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit) || 12;
   const items = await getOpenAndClosingSoon(limit);
-  res.status(200).json(new ApiResponse(200, { items }, "Open & closing-soon scholarships retrieved"));
+  res.status(200).json(new ApiResponse(200, "Open & closing-soon scholarships retrieved", { items }));
 });
 
 /**
@@ -49,7 +49,7 @@ export const getClosingSoon = asyncHandler(async (req, res) => {
  */
 export const getFacets = asyncHandler(async (req, res) => {
   const facets = await getScholarshipFacets();
-  res.status(200).json(new ApiResponse(200, facets, "Scholarship facets retrieved"));
+  res.status(200).json(new ApiResponse(200, "Scholarship facets retrieved", facets));
 });
 
 /**
@@ -62,13 +62,13 @@ export const getRecommended = asyncHandler(async (req, res) => {
   if (!studentId) {
     const items = await getFeaturedScholarships(parseInt(req.query.limit) || 6);
     return res.status(200).json(
-      new ApiResponse(200, { items, profileComplete: false }, "Showing featured scholarships (login for personalized)")
+      new ApiResponse(200, "Showing featured scholarships (login for personalized)", { items, profileComplete: false })
     );
   }
   const limit = parseInt(req.query.limit) || 8;
   const items = await getRecommendedForStudent(studentId, limit);
   res.status(200).json(
-    new ApiResponse(200, { items, profileComplete: true }, "Recommended scholarships retrieved")
+    new ApiResponse(200, "Recommended scholarships retrieved", { items, profileComplete: true })
   );
 });
 
@@ -80,7 +80,7 @@ export const getScholarship = asyncHandler(async (req, res) => {
   const { id } = req.params;
   if (!id) throw new ApiError(400, "Scholarship identifier required");
   const item = await getScholarshipById(id);
-  res.status(200).json(new ApiResponse(200, item, "Scholarship retrieved"));
+  res.status(200).json(new ApiResponse(200, "Scholarship retrieved", item));
 });
 
 /**
@@ -91,5 +91,5 @@ export const trackClick = asyncHandler(async (req, res) => {
   const { id } = req.params;
   if (!id) throw new ApiError(400, "Scholarship id required");
   await trackApplicationClick(id);
-  res.status(200).json(new ApiResponse(200, { ok: true }, "Click tracked"));
+  res.status(200).json(new ApiResponse(200, "Click tracked", { ok: true }));
 });

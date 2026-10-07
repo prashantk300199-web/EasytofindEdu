@@ -65,7 +65,7 @@ export const adminListScholarships = asyncHandler(async (req, res) => {
   ]);
 
   res.status(200).json(
-    new ApiResponse(200, {
+    new ApiResponse(200, "Scholarships retrieved (admin)", {
       items,
       pagination: {
         page: safePage,
@@ -73,7 +73,7 @@ export const adminListScholarships = asyncHandler(async (req, res) => {
         total,
         totalPages: Math.ceil(total / safeLimit) || 1,
       },
-    }, "Scholarships retrieved (admin)")
+    })
   );
 });
 
@@ -85,7 +85,7 @@ export const adminGetScholarship = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const doc = await Scholarship.findById(id);
   if (!doc) throw new ApiError(404, "Scholarship not found");
-  res.status(200).json(new ApiResponse(200, doc.toJSON(), "Scholarship retrieved"));
+  res.status(200).json(new ApiResponse(200, "Scholarship retrieved", doc.toJSON()));
 });
 
 /**
@@ -114,7 +114,7 @@ export const adminCreateScholarship = asyncHandler(async (req, res) => {
   payload.updatedBy = req.admin._id;
 
   const doc = await Scholarship.create(payload);
-  res.status(201).json(new ApiResponse(201, doc.toJSON(), "Scholarship created"));
+  res.status(201).json(new ApiResponse(201, "Scholarship created", doc.toJSON()));
 });
 
 /**
@@ -157,7 +157,7 @@ export const adminUpdateScholarship = asyncHandler(async (req, res) => {
   doc.updatedBy = req.admin._id;
   await doc.save();
 
-  res.status(200).json(new ApiResponse(200, doc.toJSON(), "Scholarship updated"));
+  res.status(200).json(new ApiResponse(200, "Scholarship updated", doc.toJSON()));
 });
 
 /**
@@ -171,7 +171,7 @@ export const adminDeleteScholarship = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const doc = await Scholarship.findByIdAndDelete(id);
   if (!doc) throw new ApiError(404, "Scholarship not found");
-  res.status(200).json(new ApiResponse(200, { _id: id }, "Scholarship deleted"));
+  res.status(200).json(new ApiResponse(200, "Scholarship deleted", { _id: id }));
 });
 
 /**
@@ -192,7 +192,7 @@ export const adminVerifyScholarship = asyncHandler(async (req, res) => {
   if (doc.status === SCHOLARSHIP_STATUS.EXPIRED) doc.status = SCHOLARSHIP_STATUS.ACTIVE;
   await doc.save();
 
-  res.status(200).json(new ApiResponse(200, doc.toJSON(), "Scholarship marked verified"));
+  res.status(200).json(new ApiResponse(200, "Scholarship marked verified", doc.toJSON()));
 });
 
 /**
@@ -214,7 +214,7 @@ export const adminSetStatus = asyncHandler(async (req, res) => {
   doc.status = status;
   doc.updatedBy = req.admin._id;
   await doc.save();
-  res.status(200).json(new ApiResponse(200, doc.toJSON(), "Scholarship status updated"));
+  res.status(200).json(new ApiResponse(200, "Scholarship status updated", doc.toJSON()));
 });
 
 /**
@@ -231,7 +231,7 @@ export const adminToggleFeature = asyncHandler(async (req, res) => {
   doc.isFeatured = !doc.isFeatured;
   doc.updatedBy = req.admin._id;
   await doc.save();
-  res.status(200).json(new ApiResponse(200, doc.toJSON(), `Scholarship ${doc.isFeatured ? "featured" : "unfeatured"}`));
+  res.status(200).json(new ApiResponse(200, `Scholarship ${doc.isFeatured ? "featured" : "unfeatured"}`, doc.toJSON()));
 });
 
 /**
@@ -251,7 +251,7 @@ export const adminStats = asyncHandler(async (req, res) => {
     Scholarship.aggregate([{ $group: { _id: "$source.sourceType", count: { $sum: 1 } } }]),
   ]);
   res.status(200).json(
-    new ApiResponse(200, {
+    new ApiResponse(200, "Scholarship stats retrieved", {
       total,
       active,
       draft,
@@ -261,6 +261,6 @@ export const adminStats = asyncHandler(async (req, res) => {
       byStatus: Object.fromEntries(byStatus.map((x) => [x._id, x.count])),
       byCategory: Object.fromEntries(byCategory.map((x) => [x._id, x.count])),
       bySource: Object.fromEntries(bySource.map((x) => [x._id, x.count])),
-    }, "Scholarship stats retrieved")
+    })
   );
 });
