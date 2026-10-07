@@ -9,7 +9,16 @@ import {
   getNodeDetail,
   getCareerAreas,
 } from "../controllers/careerGuidance.controller.js";
+import {
+  listScholarships,
+  getScholarship,
+  getFeatured as getFeaturedScholarships,
+  getClosingSoon as getClosingSoonScholarships,
+  getFacets as getScholarshipFacets,
+  trackClick as trackScholarshipClick,
+} from "../controllers/scholarship.controller.js";
 import { careerPublicLimiter, searchLimiter, questionSubmissionLimiter } from "../middlewares/careerRateLimiter.middleware.js";
+import { authenticateStudentOptional } from "../middlewares/authenticateStudentsOptional.js";
 import validate from "../middlewares/validate.js";
 import { submitAnswersValidator, searchCoursesValidator } from "../validators/careerGuidanceValidator.js";
 import CareerGuidanceQuestion from "../models/CareerGuidanceQuestions.js";
@@ -555,5 +564,52 @@ router.get("/help", careerPublicLimiter, (req, res) => {
     new ApiResponse(200, help, "Help documentation retrieved successfully")
   );
 });
+
+// ============= SCHOLARSHIP FINDER (PUBLIC) =============
+// Important: these are mounted on the same router (which is registered at
+// /api/v1/career-guidance). Order matters — keep the /:id route LAST so
+// it does not shadow /featured, /closing-soon, /facets, /recommended.
+
+/**
+ * GET /api/v1/career-guidance/scholarships
+ * Public list + search + filters + pagination
+ */
+router.get("/scholarships", careerPublicLimiter, listScholarships);
+
+/**
+ * GET /api/v1/career-guidance/scholarships/featured
+ * Featured scholarships for the landing rail
+ */
+router.get("/scholarships/featured", careerPublicLimiter, getFeaturedScholarships);
+
+/**
+ * GET /api/v1/career-guidance/scholarships/closing-soon
+ * Active + closing-soon scholarships
+ */
+router.get("/scholarships/closing-soon", careerPublicLimiter, getClosingSoonScholarships);
+
+/**
+ * GET /api/v1/career-guidance/scholarships/facets
+ * Aggregated counts for the filter UI
+ */
+router.get("/scholarships/facets", careerPublicLimiter, getScholarshipFacets);
+
+/**
+ * GET /api/v1/career-guidance/scholarships/recommended
+ * Personalized recommendations (optional student auth)
+ */
+router.get("/scholarships/recommended", careerPublicLimiter, authenticateStudentOptional, getRecommended);
+
+/**
+ * POST /api/v1/career-guidance/scholarships/:id/click
+ * Track an outbound click on the official application link
+ */
+router.post("/scholarships/:id/click", careerPublicLimiter, trackScholarshipClick);
+
+/**
+ * GET /api/v1/career-guidance/scholarships/:id
+ * Single scholarship detail (id or slug)
+ */
+router.get("/scholarships/:id", careerPublicLimiter, getScholarship);
 
 export default router;

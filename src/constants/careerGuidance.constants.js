@@ -392,6 +392,100 @@ export const SUCCESS_MESSAGES = {
   BULK_IMPORT_SUCCESS: "Bulk import completed successfully",
 };
 
+// ============= SCHOLARSHIP CONSTANTS =============
+
+export const SCHOLARSHIP_TYPES = {
+  MERIT: "merit",
+  NEED: "need",
+  MERIT_CUM_NEED: "merit_cum_need",
+  GOVERNMENT: "government",
+  STATE: "state",
+  UNIVERSITY: "university",
+  FOUNDATION: "foundation",
+  RESEARCH: "research",
+  GENDER: "gender",
+  CATEGORY: "category",
+  SPORTS: "sports",
+  DISABILITY: "disability",
+  MINORITY: "minority",
+  OTHER: "other",
+};
+
+export const SCHOLARSHIP_STATUS = {
+  ACTIVE: "active",
+  INACTIVE: "inactive",
+  CLOSED: "closed",
+  EXPIRED: "expired",
+  DRAFT: "draft",
+};
+
+export const SCHOLARSHIP_SOURCE_TYPES = {
+  GOVERNMENT: "government",
+  UNIVERSITY: "university",
+  FOUNDATION: "foundation",
+  ORGANIZATION: "organization",
+  OTHER: "other",
+};
+
+export const SCHOLARSHIP_CATEGORIES = [
+  "central_government",
+  "state_government",
+  "university",
+  "iit_iim",
+  "research_fellowship",
+  "private_foundation",
+  "ngo",
+  "international",
+  "industry_corporate",
+  "olympiad",
+  "other",
+];
+
+export const SCHOLARSHIP_GENDERS = {
+  ANY: "any",
+  FEMALE_ONLY: "female_only",
+  MALE_ONLY: "male_only",
+};
+
+export const FREQUENCY_BENEFIT = {
+  ONE_TIME: "one_time",
+  ANNUAL: "annual",
+  MONTHLY: "monthly",
+  PER_SEMESTER: "per_semester",
+  FULL_COURSE: "full_course",
+};
+
+export const SCHOLARSHIP_COMPUTED_STATUS = {
+  ACTIVE: "active",
+  UPCOMING: "upcoming",
+  CLOSING_SOON: "closing_soon",
+  CLOSED: "closed",
+  EXPIRED: "expired",
+  UNKNOWN: "unknown",
+};
+
+export const SCHOLARSHIP_AUDIT_ACTIONS = {
+  CREATE_SCHOLARSHIP: "CREATE_SCHOLARSHIP",
+  UPDATE_SCHOLARSHIP: "UPDATE_SCHOLARSHIP",
+  VERIFY_SCHOLARSHIP: "VERIFY_SCHOLARSHIP",
+  CLOSE_SCHOLARSHIP: "CLOSE_SCHOLARSHIP",
+  BULK_IMPORT_SCHOLARSHIPS: "BULK_IMPORT_SCHOLARSHIPS",
+};
+
+export const SCHOLARSHIP_SORT_OPTIONS = [
+  "relevance",
+  "deadline_soonest",
+  "deadline_latest",
+  "amount_high_to_low",
+  "amount_low_to_high",
+  "newest",
+  "most_popular",
+];
+
+export const SCHOLARSHIP_DEFAULT_PAGE = 1;
+export const SCHOLARSHIP_DEFAULT_LIMIT = 12;
+export const SCHOLARSHIP_MAX_LIMIT = 50;
+
 export default {
   QUALIFICATION_LEVELS,
   STREAMS,

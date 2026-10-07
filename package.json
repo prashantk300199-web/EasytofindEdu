@@ -10,7 +10,9 @@
     "seed": "node src/scripts/seedSuperAdmin.js",
     "seed:career": "node src/scripts/seedCareerGuidanceData.js",
     "seed:career:force": "node src/scripts/seedCareerGuidanceData.js --force",
-    "seed:all": "npm run seed && npm run seed:career",
+    "seed:scholarships": "node src/scripts/seedScholarships.js",
+    "seed:scholarships:force": "node src/scripts/seedScholarships.js --force",
+    "seed:all": "npm run seed && npm run seed:career && npm run seed:scholarships",
     "migrate:phase6": "node src/scripts/migratePhase6InstituteDrafts.js",
     "rebuild:institutes": "node scripts/rebuildInstitutesFromDrafts.js",
     "rebuild:colleges": "node scripts/rebuildCollegesFromDrafts.js"

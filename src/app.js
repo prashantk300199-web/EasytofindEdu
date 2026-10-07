@@ -30,6 +30,7 @@ import studentAuthRoutes from "./routes/student.routes.js";
 import careerGuidancePublicRoutes from "./routes/careerGuidance.public.routes.js";
 import careerGuidanceRoutes from "./routes/careerGuidance.routes.js";
 import careerGuidanceAdminRoutes from "./routes/careerGuidance.admin.routes.js";
+import adminScholarshipRoutes from "./routes/admin.scholarship.routes.js";
 import careerProgramPublicRoutes from "./routes/careerProgram.public.routes.js";
 import careerProgramAdminRoutes from "./routes/careerProgram.admin.routes.js";
 import careerCounselorRoutes from "./routes/careerCounselor.routes.js";
@@ -172,6 +173,7 @@ app.use("/api/v1/admin/careers", careerProgramAdminRoutes);
 app.use("/api/v1/career-guidance", careerGuidancePublicRoutes);
 app.use("/api/v1/career-guidance", careerGuidanceRoutes);
 app.use("/api/v1/admin/career", careerGuidanceAdminRoutes);
+app.use("/api/v1/admin/career", adminScholarshipRoutes);
 app.use("/api/v1/cg", cgRoutes);
 app.use("/api/v1/career/counselor", careerCounselorRoutes);
 
