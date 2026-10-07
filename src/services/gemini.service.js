@@ -14,13 +14,21 @@ const API_KEY = process.env.GEMINI_API_KEY || "";
 const PRIMARY = process.env.GEMINI_MODEL || "gemini-3.8-flash";
 const FALLBACK_MODELS = [
   "gemini-3.7-flash",
-  "gemini-3.6-flash",
   "gemini-3.5-flash",
 ];
 const MODEL_CHAIN = [
   PRIMARY,
   ...FALLBACK_MODELS.filter((m) => m !== PRIMARY),
 ];
+
+// Retry budget: 1 quick retry on primary, then single attempts on fallbacks.
+// Worst-case wall time = 2 attempts × TIMEOUT_MS on primary + 1s wait
+//                      + (N-1) fallbacks × TIMEOUT_MS
+//                      ≈ 40s for 3 models at TIMEOUT_MS=10s. Acceptable.
+const PRIMARY_MAX_ATTEMPTS = 2;
+const FALLBACK_MAX_ATTEMPTS = 1;
+const PRIMARY_RETRY_DELAY_MS = 1000;
+const REQUEST_TIMEOUT_MS = 10000; // per-request HTTP timeout
 
 const SYSTEM_PROMPT = `You are the AI Career Counselor for EasyToFindEdu, an Indian education platform that helps students discover careers, courses, colleges, and entrance exams.
 
@@ -154,18 +162,21 @@ export async function generateCounselorReply(messages, studentContext = null) {
       return true;
     }
     const msg = String(err?.message || err || "");
-    return /503|Service Unavailable|high demand|fetch failed|ETIMEDOUT|ECONNRESET|EAI_AGAIN|429|rate.?limit|overloaded/i.test(msg);
+    return /503|Service Unavailable|high demand|fetch failed|fetch error|ETIMEDOUT|ECONNRESET|EAI_AGAIN|429|rate.?limit|overloaded|aborted|Request aborted/i.test(msg);
   };
 
-  // Try each model in the chain; for each model, retry with exponential
-  // backoff + jitter on the same model first (cheap), and only move to the
-  // next model when the same model keeps failing transiently. Hard errors
-  // (e.g. 400 bad request) bubble up immediately without burning the chain.
-  const MAX_ATTEMPTS_PER_MODEL = 4; // 1 + 3 retries per model
+  // Try each model in the chain. Primary gets 1 quick retry (handles 1–2s
+  // blips); fallbacks get 1 attempt each. Move to the next model the
+  // instant the current one fails transiently. Hard errors (e.g. 400 bad
+  // request) bubble up immediately without burning the chain.
   let lastErr;
   for (let mi = 0; mi < MODEL_CHAIN.length; mi++) {
     const modelName = MODEL_CHAIN[mi];
-    const model = c.getGenerativeModel({ model: modelName, systemInstruction });
+    const maxAttempts = mi === 0 ? PRIMARY_MAX_ATTEMPTS : FALLBACK_MAX_ATTEMPTS;
+    const model = c.getGenerativeModel(
+      { model: modelName, systemInstruction },
+      { timeout: REQUEST_TIMEOUT_MS }
+    );
     const chat = model.startChat({
       history: chatHistory,
       generationConfig: {
@@ -176,7 +187,7 @@ export async function generateCounselorReply(messages, studentContext = null) {
       },
     });
 
-    for (let attempt = 0; attempt < MAX_ATTEMPTS_PER_MODEL; attempt++) {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
         const result = await chat.sendMessage(last.parts[0].text);
         const text = result?.response?.text?.();
@@ -189,23 +200,19 @@ export async function generateCounselorReply(messages, studentContext = null) {
         return text.trim();
       } catch (err) {
         lastErr = err;
-        const isTransient = transient(err);
-        const hasMoreAttempts = attempt < MAX_ATTEMPTS_PER_MODEL - 1;
-        const hasMoreModels = mi < MODEL_CHAIN.length - 1;
-
-        if (isTransient && hasMoreAttempts) {
-          // 1s, 2s, 4s base + up to 500ms random jitter
-          const base = 1000 * Math.pow(2, attempt);
-          const jitter = Math.floor(Math.random() * 500);
-          await new Promise((r) => setTimeout(r, base + jitter));
+        if (!transient(err)) {
+          // Hard error (4xx, auth, malformed request) — fail fast.
+          throw err;
+        }
+        if (attempt < maxAttempts - 1) {
+          // Same model, more attempts left — wait briefly then retry.
+          await new Promise((r) => setTimeout(r, PRIMARY_RETRY_DELAY_MS));
           continue;
         }
-        if (isTransient && hasMoreModels) {
+        // Out of attempts on this model — fall through to next model.
+        if (mi < MODEL_CHAIN.length - 1) {
           console.warn(`[counselor] model ${modelName} unavailable (${err?.status || "n/a"}), trying fallback ${MODEL_CHAIN[mi + 1]}`);
-          break; // exit inner loop, move to next model
         }
-        // Hard error — give up immediately.
-        throw err;
       }
     }
   }
