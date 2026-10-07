@@ -8,7 +8,6 @@ import {
   getNodes,
   getNodeDetail,
   getCareerAreas,
-  getRecommendations as getRecommended,
 } from "../controllers/careerGuidance.controller.js";
 import {
   listScholarships,
@@ -16,6 +15,7 @@ import {
   getFeatured as getFeaturedScholarships,
   getClosingSoon as getClosingSoonScholarships,
   getFacets as getScholarshipFacets,
+  getRecommended,
   trackClick as trackScholarshipClick,
 } from "../controllers/scholarship.controller.js";
 import { careerPublicLimiter, searchLimiter, questionSubmissionLimiter } from "../middlewares/careerRateLimiter.middleware.js";
