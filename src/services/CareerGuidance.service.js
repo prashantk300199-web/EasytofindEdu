@@ -1,5 +1,12 @@
 import CareerPathNode from "../models/CareerPathNode.js";
 import CareerGuidanceQuestion from "../models/CareerGuidanceQuestions.js";
+import Student from "../models/Students.js";
+// NOTE: this module imports StudentCareerProfile from "../models/Students.js"
+// even though Students.js only exports Student. The default import resolves to
+// Student, so `StudentCareerProfile === Student` at runtime. The legacy code
+// below still calls it that way to avoid a bigger rename, but the
+// authoritative wizard write is the explicit Student.findByIdAndUpdate in
+// submitQuestionnaires.
 import StudentCareerProfile from "../models/Students.js";
 import ApiError from "../utils/ApiError.js";
 import { DEFAULT_CONFIG, NODE_STATUS } from "../constants/careerGuidance.constants.js";
@@ -345,19 +352,54 @@ export const getOrCreateStudentProfile = async (studentId) => {
 
 export const submitQuestionnaires = async (studentId, answers) => {
   try {
+    // NOTE: this module imports StudentCareerProfile from "../models/Students.js"
+    // but no such model is exported there, so StudentCareerProfile === Student
+    // at runtime. The legacy write below is preserved for back-compat, but the
+    // authoritative write is to Student.careerGuidance so the chatbot (and any
+    // other consumer that reads from the Student doc) sees the wizard data.
     let profile = await StudentCareerProfile.findOne({ studentId });
-
     if (!profile) {
       profile = new StudentCareerProfile({ studentId });
     }
-
     profile.answers = answers;
     profile.completedQuestionnaireAt = new Date();
     profile.isProfileComplete = true;
     profile.profileCompletionPercentage = calculateCompletionPercentage(answers);
     profile.lastActivityAt = new Date();
-
     await profile.save();
+
+    // Authoritative write: copy the wizard's structured fields onto the
+    // Student document so any system reading Student.careerGuidance sees them.
+    // The wizard payload (see CareerGuidancePage.buildAnswersPayload) looks
+    // like: { qualification, stream, academicDetails, interests, skills,
+    //   workStyle, workEnvironment, priorities, budget, preferredCities,
+    //   relocation, hostelNeeded, scholarshipLoan, financialCapacity }.
+    const relocationMap = {
+      "Yes, willing to relocate": "yes",
+      "No, prefer to stay close to home": "no",
+      "Maybe, depends on the opportunity": "maybe",
+    };
+    await Student.findByIdAndUpdate(studentId, {
+      $set: {
+        "careerGuidance.stream": answers.stream || "",
+        "careerGuidance.preferences.interests": Array.isArray(answers.interests) ? answers.interests : [],
+        "careerGuidance.preferences.skills": Array.isArray(answers.skills) ? answers.skills : [],
+        "careerGuidance.preferences.workStyle": answers.workStyle || "",
+        "careerGuidance.preferences.workEnvironment": answers.workEnvironment || "",
+        "careerGuidance.preferences.priorities": Array.isArray(answers.priorities) ? answers.priorities : [],
+        "careerGuidance.preferences.budget": answers.budget || "",
+        "careerGuidance.preferences.financialCapacity": answers.financialCapacity || "",
+        "careerGuidance.preferences.preferredCities": Array.isArray(answers.preferredCities) ? answers.preferredCities : [],
+        "careerGuidance.preferences.relocationWilling": relocationMap[answers.relocation] || "",
+        "careerGuidance.preferences.hostelNeeded": answers.hostelNeeded || "",
+        "careerGuidance.preferences.scholarshipLoan": answers.scholarshipLoan || "",
+        "careerGuidance.preferences.careerGoal": answers.careerGoal || "",
+        "careerGuidance.questionnaireCompletedAt": new Date(),
+        "careerGuidance.isQuestionnaireCompleted": true,
+        "careerGuidance.lastActivityAt": new Date(),
+      },
+    });
+
     logger.info("Questionnaire submitted", { studentId });
     return profile;
   } catch (error) {

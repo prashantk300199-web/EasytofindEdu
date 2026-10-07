@@ -31,6 +31,23 @@ export async function buildStudentContext(studentId) {
       cg.questionnaireCompletedAt || cg.isQuestionnaireCompleted
     );
 
+    // Combine the two interest sources so the AI has the full picture:
+    //   - preferredSubjects: array stored at signup (e.g. ["Maths","Physics"])
+    //   - careerGuidance.preferences.interests: multi-value from the wizard
+    //     ("Technology & Programming", "Healthcare & Medicine", ...)
+    //   - careerGuidance.preferences.expertiseSubject: single strongest subject
+    const subjectInterests = [];
+    const push = (v) => {
+      if (v && !subjectInterests.includes(v)) subjectInterests.push(v);
+    };
+    if (Array.isArray(student.preferredSubjects)) {
+      for (const s of student.preferredSubjects) push(s);
+    }
+    if (Array.isArray(cg.preferences?.interests)) {
+      for (const s of cg.preferences.interests) push(s);
+    }
+    if (cg.preferences?.expertiseSubject) push(cg.preferences.expertiseSubject);
+
     // Fetch saved career details
     let savedCareers = [];
     if (cg.savedPaths && cg.savedPaths.length > 0) {
@@ -51,8 +68,29 @@ export async function buildStudentContext(studentId) {
       recommendations = topRecs;
     }
 
+    // "hasProfile" = we have any usable field worth surfacing to the AI.
+    // Used by the AI prompt to decide whether to personalise. This is true
+    // even before the career-guidance questionnaire is finished — the
+    // student has already given us name, qualification, school, interests
+    // at signup, and the AI must use those instead of re-asking.
+    const hasAnyData = Boolean(
+      student.name ||
+        student.lastQualification ||
+        student.gender ||
+        student.academicDetails?.schoolName ||
+        student.academicDetails?.boardOrUniversity ||
+        student.academicDetails?.percentage ||
+        student.academicDetails?.passingYear ||
+        (Array.isArray(student.preferredSubjects) && student.preferredSubjects.length) ||
+        cg.stream ||
+        (Array.isArray(cg.preferences?.interests) && cg.preferences.interests.length) ||
+        cg.preferences?.expertiseSubject ||
+        cg.preferences?.careerGoal ||
+        isProfileComplete
+    );
+
     const context = {
-      hasProfile: isProfileComplete,
+      hasProfile: hasAnyData,
       basics: {
         name: student.name || "",
         educationLevel: student.lastQualification || "",
@@ -64,16 +102,22 @@ export async function buildStudentContext(studentId) {
       },
       careerGuidance: {
         stream: cg.stream || "",
-        interests: cg.preferences?.expertiseSubject
-          ? [cg.preferences.expertiseSubject]
-          : [],
+        interests: subjectInterests,
         preferences: {
           relocation: cg.preferences?.relocationWilling || "",
           preferredCities: cg.preferences?.preferredCities || [],
-          budget: cg.preferences?.financialCapacity || "",
+          budget: cg.preferences?.budget || "",
+          financialCapacity: cg.preferences?.financialCapacity || "",
           timeframe: cg.preferences?.timeframe || "",
           careerGoal: cg.preferences?.careerGoal || "",
+          expertiseSubject: cg.preferences?.expertiseSubject || "",
+          workStyle: cg.preferences?.workStyle || "",
+          workEnvironment: cg.preferences?.workEnvironment || "",
+          priorities: cg.preferences?.priorities || [],
+          hostelNeeded: cg.preferences?.hostelNeeded || "",
+          scholarshipLoan: cg.preferences?.scholarshipLoan || "",
         },
+        skills: Array.isArray(cg.preferences?.skills) ? cg.preferences.skills : [],
         questionnaireCompletedAt: cg.questionnaireCompletedAt
           ? new Date(cg.questionnaireCompletedAt).toLocaleDateString("en-IN")
           : null,
@@ -103,7 +147,8 @@ export async function buildStudentContext(studentId) {
 
     logger.info("Student context built", {
       studentId,
-      hasProfile: isProfileComplete,
+      hasProfile: hasAnyData,
+      isProfileComplete,
       savedCareers: savedCareers.length,
     });
 

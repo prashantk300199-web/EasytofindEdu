@@ -102,10 +102,20 @@ export const submitAnswers = asyncHandler(async (req, res) => {
       answers
     );
 
-    // Update student's lastQualification
+    // Update student's lastQualification with a human-readable label.
+    // The wizard sends a slug like 'class_12th' / 'bachelor' — keep a
+    // friendly version on the Student doc so the AI prompt reads naturally
+    // (e.g. "Current education level / last qualification: Class 12").
     if (answers.qualification) {
+      const QUALIFICATION_LABELS = {
+        class_10th: "Class 10",
+        class_12th: "Class 12",
+        diploma: "Diploma",
+        bachelor: "Bachelor's Degree",
+        master: "Master's Degree",
+      };
       await Student.findByIdAndUpdate(req.user._id, {
-        lastQualification: answers.qualification,
+        lastQualification: QUALIFICATION_LABELS[answers.qualification] || answers.qualification,
       });
     }
 

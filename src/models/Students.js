@@ -176,6 +176,13 @@ const studentSchema = new mongoose.Schema(
           enum: ["low", "lower_middle", "middle", "upper_middle", "high", ""],
           default: "",
         },
+        budget: {
+          // Display string from the UI (e.g. "₹1 Lakh – ₹5 Lakh").
+          // financialCapacity is the coarse enum version; budget keeps the
+          // human label so the AI can mention it back if helpful.
+          type: String,
+          default: "",
+        },
         timeframe: {
           type: String,
           enum: ["immediate", "short_term", "medium_term", "long_term", ""],
@@ -189,6 +196,17 @@ const studentSchema = new mongoose.Schema(
           type: String,
           default: "",
         },
+        // Multi-value interests selected in the career-guidance wizard
+        // ("Technology & Programming", "Healthcare & Medicine", ...).
+        // Distinct from expertiseSubject which is the single strongest
+        // subject from academicDetails.
+        interests: [{ type: String, trim: true }],
+        skills: [{ type: String, trim: true }],
+        workStyle: { type: String, default: "" },
+        workEnvironment: { type: String, default: "" },
+        priorities: [{ type: String, trim: true }],
+        hostelNeeded: { type: String, default: "" },
+        scholarshipLoan: { type: String, default: "" },
       },
 
       // Saved paths & tracking

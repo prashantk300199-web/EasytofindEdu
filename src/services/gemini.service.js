@@ -81,7 +81,14 @@ function getClient() {
 
 /**
  * Convert a buildStudentContext() result into a short system-prompt section.
- * Returns null when there is no usable profile data.
+ * Returns null only when there is no usable profile data at all.
+ *
+ * The section is split into "KNOWN" fields (the AI must NOT ask for these
+ * again) and "KNOWN PREFERENCES" (the AI should use these to personalise).
+ * When `hasProfile` is true but the career-guidance questionnaire hasn't
+ * been completed, we still emit the basics — the student already gave us
+ * name, qualification, school, percentage, and interests at signup, so the
+ * AI must use those instead of re-asking.
  */
 function formatProfileSection(ctx) {
   if (!ctx || !ctx.hasProfile) return null;
@@ -92,36 +99,63 @@ function formatProfileSection(ctx) {
   const prefs = cg.preferences || {};
 
   if (basics.name) lines.push(`- Name: ${basics.name}`);
-  if (basics.educationLevel) lines.push(`- Education level: ${basics.educationLevel}`);
+  if (basics.gender) lines.push(`- Gender: ${basics.gender}`);
+  if (basics.educationLevel) lines.push(`- Current education level / last qualification: ${basics.educationLevel}`);
+  if (basics.board) lines.push(`- Board: ${basics.board}`);
+  if (basics.school) lines.push(`- School / institution: ${basics.school}`);
+  if (basics.percentage) lines.push(`- Latest percentage / score: ${basics.percentage}`);
+  if (basics.passingYear) lines.push(`- Passing year: ${basics.passingYear}`);
   if (cg.stream) lines.push(`- Stream: ${cg.stream}`);
-  if (cg.interests && cg.interests.length) lines.push(`- Interests: ${cg.interests.join(", ")}`);
+  if (Array.isArray(cg.interests) && cg.interests.length) {
+    lines.push(`- Subjects / interests: ${cg.interests.join(", ")}`);
+  }
+  if (Array.isArray(cg.skills) && cg.skills.length) {
+    lines.push(`- Self-reported skills: ${cg.skills.join(", ")}`);
+  }
   if (prefs.careerGoal) lines.push(`- Career goal: ${prefs.careerGoal}`);
-  if (prefs.budget) lines.push(`- Budget: ${prefs.budget}`);
+  if (prefs.expertiseSubject) lines.push(`- Strongest subject: ${prefs.expertiseSubject}`);
+  if (prefs.budget) lines.push(`- Budget for studies: ${prefs.budget}`);
+  if (prefs.financialCapacity) lines.push(`- Financial capacity tier: ${prefs.financialCapacity}`);
   if (prefs.timeframe) lines.push(`- Timeframe: ${prefs.timeframe}`);
-  if (prefs.relocation) lines.push(`- Relocation: ${prefs.relocation}`);
-  if (prefs.preferredCities && prefs.preferredCities.length) {
+  if (prefs.workStyle) lines.push(`- Preferred work style: ${prefs.workStyle}`);
+  if (prefs.workEnvironment) lines.push(`- Preferred work environment: ${prefs.workEnvironment}`);
+  if (Array.isArray(prefs.priorities) && prefs.priorities.length) {
+    lines.push(`- Career priorities: ${prefs.priorities.join(", ")}`);
+  }
+  if (prefs.relocation) lines.push(`- Relocation willingness: ${prefs.relocation}`);
+  if (Array.isArray(prefs.preferredCities) && prefs.preferredCities.length) {
     lines.push(`- Preferred cities: ${prefs.preferredCities.join(", ")}`);
   }
-  if (basics.percentage) lines.push(`- Latest percentage / score: ${basics.percentage}`);
+  if (prefs.hostelNeeded) lines.push(`- Hostel needed: ${prefs.hostelNeeded}`);
+  if (prefs.scholarshipLoan) lines.push(`- Scholarship / loan preference: ${prefs.scholarshipLoan}`);
 
   if (Array.isArray(ctx.savedCareers) && ctx.savedCareers.length) {
-    lines.push(`- Saved careers: ${ctx.savedCareers.map((c) => c.title).join(", ")}`);
+    lines.push(`- Saved careers (already shortlisted by the student): ${ctx.savedCareers.map((c) => c.title).join(", ")}`);
   }
   if (Array.isArray(ctx.topRecommendations) && ctx.topRecommendations.length) {
     lines.push(
-      `- Top recommendations for this student: ${ctx.topRecommendations.map((r) => r.title).join(", ")}`
+      `- Top recommendations shown to this student on the platform: ${ctx.topRecommendations.map((r) => r.title).join(", ")}`
     );
   }
 
   if (lines.length === 0) return null;
 
+  const isQuestionnaireComplete = cg.isComplete === true;
+
   return [
     "",
-    "== ABOUT THIS STUDENT (use to personalise; do NOT recite these details back) ==",
+    "== STUDENT PROFILE (already provided by the student on signup / career-guidance page — DO NOT ask for these fields again) ==",
     ...lines,
     "== END STUDENT CONTEXT ==",
     "",
-    "Personalise your answer to this student when relevant. Do not start with \"Based on your profile\" or similar filler — just answer their question, with their context in mind.",
+    "Behavioural rules:",
+    "- The fields above are ALREADY KNOWN. Never ask the student to repeat their name, education level, qualification, stream, board, school, percentage, subjects, interests, skills, career goal, budget, timeframe, work style, work environment, priorities, preferred cities.",
+    "- Use these details to personalise your answer silently. Tailor examples, suggestions, and the level of explanation to this student's profile.",
+    "- Do NOT begin with phrases like 'Based on your profile', 'As a Class 12 PCM student', 'Since you're interested in...'. Just answer their question, with their context in mind.",
+    isQuestionnaireComplete
+      ? "- The career-guidance questionnaire is complete — full profile is available above."
+      : "- The career-guidance questionnaire is NOT yet complete. Only the signup-time basics are known. Do not invent preferences the student hasn't shared (e.g. specific city, budget, career goal).",
+    "- If a relevant detail is missing from the profile above and you genuinely need it to answer, you may ask ONE focused clarifying question — but only for the specific missing field, and only when it would meaningfully change your recommendation.",
   ].join("\n");
 }
 
