@@ -82,10 +82,19 @@ export const chat = asyncHandler(async (req, res) => {
     return res.status(200).json({ success: true, message: reply });
   } catch (err) {
     console.error("[counselor] Gemini error:", err?.message || err);
-    return res.status(502).json({
+    const body = {
       success: false,
-      message: "AI Counselor is temporarily unavailable.",
-    });
+        message: "AI Counselor is temporarily unavailable.",
+      };
+    // TEMP DEBUG: include error info when ?debug=1 is set, so we can see what's failing
+    if (req.query.debug === "1") {
+      body.debug = {
+        status: err?.status ?? err?.statusCode,
+        message: String(err?.message || err).slice(0, 300),
+        name: err?.name,
+      };
+    }
+    return res.status(502).json(body);
   }
 });
 
