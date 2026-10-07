@@ -9,10 +9,18 @@ const API_KEY = process.env.GEMINI_API_KEY || "";
 
 // Model chain — primary first (env override), then stable fallbacks.
 // Gemini 3.x flash models share the same API surface; when one is overloaded
-// (intermittent 503 "high demand"), another usually has capacity. Stops at
-// the first model that returns a real reply.
+// or quota-exhausted, another usually has capacity. Models with different
+// tier names (lite, preview) tend to be on separate quota pools, which helps
+// when the project is hitting its quota on the regular flash tier.
+//
+// Fallback order is curated to put the most-reliable / most-likely-to-have-
+// quota models first. If env GEMINI_MODEL is set, it goes first regardless.
 const PRIMARY = process.env.GEMINI_MODEL || "gemini-3.8-flash";
 const FALLBACK_MODELS = [
+  "gemini-3.5-flash-lite",  // separate lite pool; confirmed working
+  "gemini-3.6-flash",       // confirmed working
+  "gemini-3-flash-preview", // separate preview pool; confirmed working
+  "gemini-3.8-flash",       // primary default
   "gemini-3.7-flash",
   "gemini-3.5-flash",
 ];
