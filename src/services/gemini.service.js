@@ -5,8 +5,22 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
 const API_KEY = process.env.GEMINI_API_KEY || "";
+
+// Model chain — primary first (env override), then stable fallbacks.
+// Gemini 3.x flash models share the same API surface; when one is overloaded
+// (intermittent 503 "high demand"), another usually has capacity. Stops at
+// the first model that returns a real reply.
+const PRIMARY = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+const FALLBACK_MODELS = [
+  "gemini-3.7-flash",
+  "gemini-3.6-flash",
+  "gemini-3.5-flash",
+];
+const MODEL_CHAIN = [
+  PRIMARY,
+  ...FALLBACK_MODELS.filter((m) => m !== PRIMARY),
+];
 
 const SYSTEM_PROMPT = `You are the AI Career Counselor for EasyToFindEdu, an Indian education platform that helps students discover careers, courses, colleges, and entrance exams.
 
@@ -110,11 +124,6 @@ export async function generateCounselorReply(messages, studentContext = null) {
   const profileSection = formatProfileSection(studentContext);
   const systemInstruction = SYSTEM_PROMPT + (profileSection || "");
 
-  const model = c.getGenerativeModel({
-    model: MODEL,
-    systemInstruction,
-  });
-
   // Convert history to Gemini format. Drop any "system" entries — they're
   // already handled via systemInstruction above.
   const history = messages
@@ -135,40 +144,69 @@ export async function generateCounselorReply(messages, studentContext = null) {
   }
   const chatHistory = history.slice(0, -1);
 
-  const chat = model.startChat({
-    history: chatHistory,
-    generationConfig: {
-      temperature: 0.7,
-      maxOutputTokens: 2048,
-      topP: 0.9,
-      topK: 40,
-    },
-  });
-
-  // Retry on transient 5xx / network errors. Most user-facing failures are
-  // Google's "high demand" 503s, which usually clear within a few seconds.
-  // Up to 3 total attempts with exponential backoff (1.5s, 3s).
+  // Classify whether an error is transient (worth retrying / falling back on).
+  // 503 high-demand, 429 quota, network blips all fall in here. We do NOT
+  // retry on 4xx like bad request or invalid API key — those will never
+  // succeed by trying again or switching.
   const transient = (err) => {
+    const status = err?.status ?? err?.statusCode;
+    if (status === 429 || status === 500 || status === 502 || status === 503 || status === 504) {
+      return true;
+    }
     const msg = String(err?.message || err || "");
-    return /503|Service Unavailable|high demand|fetch failed|ETIMEDOUT|ECONNRESET|EAI_AGAIN/i.test(msg);
+    return /503|Service Unavailable|high demand|fetch failed|ETIMEDOUT|ECONNRESET|EAI_AGAIN|429|rate.?limit|overloaded/i.test(msg);
   };
 
+  // Try each model in the chain; for each model, retry with exponential
+  // backoff + jitter on the same model first (cheap), and only move to the
+  // next model when the same model keeps failing transiently. Hard errors
+  // (e.g. 400 bad request) bubble up immediately without burning the chain.
+  const MAX_ATTEMPTS_PER_MODEL = 4; // 1 + 3 retries per model
   let lastErr;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      const result = await chat.sendMessage(last.parts[0].text);
-      const text = result?.response?.text?.();
-      if (!text || !text.trim()) {
-        throw new Error("Gemini returned an empty response.");
+  for (let mi = 0; mi < MODEL_CHAIN.length; mi++) {
+    const modelName = MODEL_CHAIN[mi];
+    const model = c.getGenerativeModel({ model: modelName, systemInstruction });
+    const chat = model.startChat({
+      history: chatHistory,
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 2048,
+        topP: 0.9,
+        topK: 40,
+      },
+    });
+
+    for (let attempt = 0; attempt < MAX_ATTEMPTS_PER_MODEL; attempt++) {
+      try {
+        const result = await chat.sendMessage(last.parts[0].text);
+        const text = result?.response?.text?.();
+        if (!text || !text.trim()) {
+          throw new Error("Gemini returned an empty response.");
+        }
+        if (mi > 0) {
+          console.warn(`[counselor] succeeded via fallback model ${modelName} after primary ${PRIMARY} was unavailable`);
+        }
+        return text.trim();
+      } catch (err) {
+        lastErr = err;
+        const isTransient = transient(err);
+        const hasMoreAttempts = attempt < MAX_ATTEMPTS_PER_MODEL - 1;
+        const hasMoreModels = mi < MODEL_CHAIN.length - 1;
+
+        if (isTransient && hasMoreAttempts) {
+          // 1s, 2s, 4s base + up to 500ms random jitter
+          const base = 1000 * Math.pow(2, attempt);
+          const jitter = Math.floor(Math.random() * 500);
+          await new Promise((r) => setTimeout(r, base + jitter));
+          continue;
+        }
+        if (isTransient && hasMoreModels) {
+          console.warn(`[counselor] model ${modelName} unavailable (${err?.status || "n/a"}), trying fallback ${MODEL_CHAIN[mi + 1]}`);
+          break; // exit inner loop, move to next model
+        }
+        // Hard error — give up immediately.
+        throw err;
       }
-      return text.trim();
-    } catch (err) {
-      lastErr = err;
-      if (transient(err) && attempt < 2) {
-        await new Promise((r) => setTimeout(r, 1500 * Math.pow(2, attempt)));
-        continue;
-      }
-      throw err;
     }
   }
   throw lastErr;
