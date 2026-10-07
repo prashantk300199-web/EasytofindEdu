@@ -8,6 +8,7 @@ import {
   getNodes,
   getNodeDetail,
   getCareerAreas,
+  getRecommendations as getRecommended,
 } from "../controllers/careerGuidance.controller.js";
 import {
   listScholarships,

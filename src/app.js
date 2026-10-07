@@ -34,6 +34,7 @@ import adminScholarshipRoutes from "./routes/admin.scholarship.routes.js";
 import careerProgramPublicRoutes from "./routes/careerProgram.public.routes.js";
 import careerProgramAdminRoutes from "./routes/careerProgram.admin.routes.js";
 import careerCounselorRoutes from "./routes/careerCounselor.routes.js";
+import aiPetRoutes from "./routes/aiPet.routes.js";
 import enquiryRoutes from "./routes/enquiry.routes.js";
 import publicRoutes from "./routes/public.routes.js";
 import admissionRoutes from "./routes/admission.routes.js";
@@ -176,6 +177,7 @@ app.use("/api/v1/admin/career", careerGuidanceAdminRoutes);
 app.use("/api/v1/admin/career", adminScholarshipRoutes);
 app.use("/api/v1/cg", cgRoutes);
 app.use("/api/v1/career/counselor", careerCounselorRoutes);
+app.use("/api/v1/ai-pet", aiPetRoutes);
 
 app.use(express.static(path.join(__dirname, '../public')));
 
