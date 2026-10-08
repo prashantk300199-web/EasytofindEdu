@@ -110,7 +110,9 @@ export function buildInstituteUpdateFromDraft(draft) {
   ];
   if (facilityList.length) $set.facilityList = facilityList;
 
-  // Academic info
+  // Academic info — always build the full object so we never $set both
+  // `academicInfo` (replace) and `academicInfo.field` (update) together,
+  // which MongoDB rejects as a path conflict.
   const academic = {};
   if (s8.trainerStudentRatio) academic.studentFacultyRatio = s8.trainerStudentRatio;
   if (Array.isArray(s8.teachingMethod) && s8.teachingMethod.length) {
@@ -119,8 +121,11 @@ export function buildInstituteUpdateFromDraft(draft) {
     academic.teachingMethodology = s8.studentSupport;
   }
   if (s6.mockTests) academic.mockTestFrequency = 'Regular';
-  $set['academicInfo.remedialClasses'] = Boolean(s6.doubtSessions);
-  $set['academicInfo.residentialProgram'] = Boolean(bools.hostel);
+  academic.remedialClasses = Boolean(s6.doubtSessions);
+  academic.residentialProgram = Boolean(bools.hostel);
+  // Only set the top-level key when the object has at least one field,
+  // otherwise MongoDB would $set academicInfo: {} and still allow
+  // the dot-notation siblings to be set cleanly.
   if (Object.keys(academic).length) $set.academicInfo = academic;
 
   // Transparency
