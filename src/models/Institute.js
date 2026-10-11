@@ -34,6 +34,11 @@ const locationSchema = new mongoose.Schema({
   subareaName: { type: String },
   fullAddress: String,
   landmark: String,
+  // Google Maps coordinates — both optional. Stored as numbers when
+  // the owner provided them; left undefined when they didn't. Don't
+  // infer (0, 0) when missing.
+  latitude: { type: Number },
+  longitude: { type: Number },
   distanceFromLandmarks: [{
     landmarkName: String,
     distanceInKm: Number
@@ -98,6 +103,25 @@ const instituteSchema = new mongoose.Schema({
     careerOutcomesScore: { type: Number, default: 0 },
     overallScore: { type: Number, default: 0 }
   },
+
+  // Top-level category the institute belongs to (e.g. "Medical Coaching",
+  // "Engineering Coaching"). Optional; existing records without this
+  // field remain readable.
+  category: { type: String, trim: true, default: '' },
+
+  // Target examinations / programs the institute prepares students for.
+  // Stored as an array of free-form strings so it works for predefined
+  // examinations (e.g. "NEET UG", "JEE Main") and custom ones.
+  subcategories: { type: [String], default: [] },
+
+  // Per-course category values, surfaced from the embedded course list.
+  courseCategories: { type: [String], default: [] },
+
+  // Whether the listed fee amount already includes GST. Boolean so the
+  // UI and downstream consumers can render "incl. GST" / "+ GST"
+  // unambiguously without inferring from the amount. Optional for
+  // older records.
+  feeIncludesGst: { type: Boolean, default: false },
 
   courses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'InstituteOwner' },

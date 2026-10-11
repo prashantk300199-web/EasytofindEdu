@@ -128,18 +128,27 @@ export const createHostelSchema = Joi.object({
 
   /* ----------------------------- Location ------------------------------- */
 
+  // Location is OPTIONAL. Owners can register a hostel using only the
+  // textual address fields. When present, coordinates must be a valid
+  // [lng, lat] pair; when absent or null, registration proceeds without
+  // them. Never default to (0, 0) or any other placeholder.
+
   location: Joi.alternatives()
     .try(
       Joi.object({
         type: Joi.string().valid("Point").default("Point"),
-        coordinates: Joi.array()
-          .items(joiNumber)
-          .length(2)
-          .required(),
+        // Allow both an array of two numbers and `null` (the frontend
+        // sends `null` when the owner skipped map selection).
+        coordinates: Joi.alternatives()
+          .try(
+            Joi.array().items(joiNumber).length(2),
+            Joi.valid(null)
+          )
+          .optional(),
       }),
       Joi.string().custom(parseJSON)
     )
-    .required(),
+    .optional(),
 
   /* ------------------------------- Rent -------------------------------- */
 

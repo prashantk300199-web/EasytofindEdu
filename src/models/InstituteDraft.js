@@ -17,24 +17,38 @@ const trainerSchema = new mongoose.Schema({
 const courseSchema = new mongoose.Schema({
   id: String,
   courseName: String,
+  // Accept both shapes so older drafts that wrote `name` still load.
+  name: String,
   courseCode: String,
+  // Free-form category — either a value from the predefined list
+  // (Engineering, Medical, etc.) or a custom string the owner typed.
+  // Never reduced to the literal "Other".
   category: String,
   duration: String,
   durationType: String,
   mode: String,
   level: String,
   eligibility: String,
+  // Total fees for the course, kept as a string so the owner can
+  // type / edit without losing the value during partial input.
+  totalFees: String,
+  seats: String,
   syllabus: String,
   description: String,
   certificationAvailable: Boolean,
   certificateAuthority: String,
   trialAvailable: Boolean,
   practicalTraining: Boolean,
+  // Min/Max age fields were removed from the UI; they remain here
+  // (Mixed) as read-only legacy fields so older drafts still load.
+  // They are no longer required, validated, or displayed.
+  minAge: mongoose.Schema.Types.Mixed,
+  maxAge: mongoose.Schema.Types.Mixed,
   entranceExamRequired: Boolean,
   entranceExamName: String,
   outcomes: String,
   skills: String
-}, { _id: false });
+}, { _id: false, strict: false });
 
 const batchSchema = new mongoose.Schema({
   id: String,
@@ -139,6 +153,12 @@ const instituteDraftSchema = new mongoose.Schema({
     landmark: String,
     pincode: String,
     googleMapsLink: String,
+    // Lat / long are OPTIONAL — owners can complete registration
+    // without picking a map location. Stored as strings so an empty
+    // value remains distinguishable from 0 / 0 (which is not the
+    // same as "no map selection").
+    latitude: String,
+    longitude: String,
     phone: String,
     alternatePhone: String,
     email: String,
@@ -211,6 +231,11 @@ const instituteDraftSchema = new mongoose.Schema({
     certificationFee: String,
     otherCharges: String,
     totalPayableAmount: String,
+    // Whether the listed fee amount already includes GST. Boolean so the
+    // UI and downstream consumers can render "incl. GST" / "+ GST"
+    // unambiguously without inferring from the amount. Older drafts
+    // pre-dating this field simply have it as undefined.
+    feeIncludesGst: { type: Boolean, default: false },
     scholarshipAvailable: Boolean,
     scholarshipDetails: String,
     installmentAvailable: Boolean,

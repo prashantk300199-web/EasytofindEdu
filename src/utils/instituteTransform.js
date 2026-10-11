@@ -48,7 +48,9 @@ const splitOtherFacilities = (raw) => {
  */
 export function buildInstituteUpdateFromDraft(draft) {
   const s1 = draft.step1InstituteInfo || {};
+  const s2 = draft.step2Category || {};
   const s3 = draft.step3LocationContact || {};
+  const s4 = draft.step4Courses || {};
   const s6 = draft.step6LearningExperience || {};
   const s7 = draft.step7Facilities || {};
   const s8 = draft.step8Faculty || {};
@@ -74,6 +76,25 @@ export function buildInstituteUpdateFromDraft(draft) {
   if (s1.logoFile) $set.logo = { url: s1.logoFile };
   if (s1.coverImageFile) $set.coverImage = { url: s1.coverImageFile };
 
+  // Category & subcategories — normalize the new array shape and accept
+  // a legacy single-string subcategory field so older drafts remain
+  // readable.
+  if (s2.primaryCategory) $set.category = s2.primaryCategory;
+  const subArr = Array.isArray(s2.subcategories)
+    ? s2.subcategories.filter(Boolean)
+    : (typeof s2.subcategory === 'string' && s2.subcategory.trim() ? [s2.subcategory.trim()] : []);
+  if (subArr.length) $set.subcategories = subArr;
+
+  // Courses (free-text from step 4) — surface their categories for the
+  // public detail page and downstream search/filter. Backward-compatible:
+  // if the old structure stored courses as plain objects without a
+  // category, this simply emits an empty array.
+  if (Array.isArray(s4.courses) && s4.courses.length) {
+    $set.courseCategories = s4.courses
+      .map((c) => (c && typeof c.category === 'string' ? c.category.trim() : ''))
+      .filter(Boolean);
+  }
+
   // Director — the registration flow has no dedicated director field, so
   // surface the registering owner's name as the best available signal.
   if (s14.ownerName) $set.directorName = s14.ownerName;
@@ -94,6 +115,14 @@ export function buildInstituteUpdateFromDraft(draft) {
   if (s3.subarea) loc.subareaName = s3.subarea;
   if (s3.fullAddress) loc.fullAddress = s3.fullAddress;
   if (s3.landmark) loc.landmark = s3.landmark;
+  // Google Maps coordinates are optional. Only persist them if the owner
+  // actually picked a location; never default to (0, 0).
+  const lat = parseFloat(s3.latitude);
+  const lng = parseFloat(s3.longitude);
+  if (Number.isFinite(lat) && Number.isFinite(lng)) {
+    loc.latitude = lat;
+    loc.longitude = lng;
+  }
   if (Object.keys(loc).length) $set.location = loc;
 
   // Facilities: booleans for known slots + raw string list for everything else.
@@ -136,6 +165,16 @@ export function buildInstituteUpdateFromDraft(draft) {
   if (s9.cancellationPolicy) tr.termsAndConditions = s9.cancellationPolicy;
   if (Object.keys(tr).length) $set.transparency = tr;
 
+  // GST status — explicit boolean, not inferred from the amount.
+  // Only persist on the public Institute when the draft has actually
+  // recorded it, so older drafts / records without the field keep
+  // their original `undefined` GST state (which the UI renders as
+  // "no GST information on file"). We do not force a default for
+  // legacy records.
+  if (s9.feeIncludesGst === true || s9.feeIncludesGst === false) {
+    $set.feeIncludesGst = s9.feeIncludesGst;
+  }
+
   // Gallery
   if (Array.isArray(s13.galleryFiles) && s13.galleryFiles.length) {
     $set.galleryImages = s13.galleryFiles
@@ -151,10 +190,11 @@ export function buildInstituteUpdateFromDraft(draft) {
   // Scrub fields that older broken approvals wrote but the Institute schema
   // doesn't have. Mongoose silently drops them on insert; on update they'd
   // linger unless explicitly unset.
+  // (NOTE: `category` and `subcategories` are now part of the schema, so
+  // they are no longer in this unset list — keeping them here would
+  // immediately wipe the values we just $set.)
   const $unset = {
     description: '',
-    category: '',
-    subcategories: '',
     contact: '',
     'location.pincode': '',
   };

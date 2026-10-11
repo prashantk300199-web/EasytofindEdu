@@ -63,7 +63,13 @@ const hostelSchema = new mongoose.Schema({
   },
   location: {
     type: { type: String, enum: ["Point"], default: "Point" },
-    coordinates: { type: [Number], required: true },
+    // Coordinates are optional. Owners can register a hostel without
+    // picking a Google Maps location — the textual address fields
+    // are what the platform uses for search and contact. A `null`
+    // array is the safe default; the 2dsphere index skips null
+    // coordinates, so records without a map selection just don't
+    // appear in geo-proximity queries.
+    coordinates: { type: [Number], default: undefined, required: false },
   },
   rent: {
     security_deposit_type: {

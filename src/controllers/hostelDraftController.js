@@ -39,10 +39,19 @@ export const saveDraft = asyncHandler(async (req, res) => {
         country: 'India',
         pincode: formData.pincode || '800001',
       },
-      location: {
-        type: 'Point',
-        coordinates: [85.1376, 25.5941],
-      },
+      // Location is optional. The draft is a real Hostel record with
+      // `isDraft: true`, but we no longer fabricate (0, 0) coordinates
+      // when the owner skipped map selection. If the form has real
+      // coordinates, use them; otherwise store no coordinates so the
+      // 2dsphere index ignores this record.
+      location: (() => {
+        const coords = formData.location?.coordinates;
+        if (Array.isArray(coords) && coords.length === 2 &&
+            Number.isFinite(coords[0]) && Number.isFinite(coords[1])) {
+          return { type: 'Point', coordinates: [coords[0], coords[1]] };
+        }
+        return { type: 'Point' };
+      })(),
     });
   }
 
