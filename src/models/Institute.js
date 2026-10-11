@@ -117,10 +117,32 @@ const instituteSchema = new mongoose.Schema({
   // Per-course category values, surfaced from the embedded course list.
   courseCategories: { type: [String], default: [] },
 
+  // Per-course fee structure (one entry per course the institute
+  // offers). Each entry carries the full fee breakdown plus the
+  // explicit feeIncludesGst boolean. Older records without this
+  // field are still readable; downstream pages just render nothing.
+  courseFees: [{
+    courseId: String,
+    courseName: String,
+    registrationFee: { type: String, default: '' },
+    admissionFee: { type: String, default: '' },
+    courseFee: { type: String, default: '' },
+    monthlyFee: { type: String, default: '' },
+    quarterlyFee: { type: String, default: '' },
+    materialFee: { type: String, default: '' },
+    kitFee: { type: String, default: '' },
+    examFee: { type: String, default: '' },
+    certificationFee: { type: String, default: '' },
+    otherCharges: { type: String, default: '' },
+    totalPayableAmount: { type: String, default: '' },
+    feeIncludesGst: { type: Boolean, default: false }
+  }],
+
   // Whether the listed fee amount already includes GST. Boolean so the
   // UI and downstream consumers can render "incl. GST" / "+ GST"
   // unambiguously without inferring from the amount. Optional for
-  // older records.
+  // older records; new per-course fees carry the canonical
+  // `courseFees[].feeIncludesGst` flag.
   feeIncludesGst: { type: Boolean, default: false },
 
   courses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],

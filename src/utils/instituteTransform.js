@@ -160,10 +160,47 @@ export function buildInstituteUpdateFromDraft(draft) {
   // Transparency
   const tr = {};
   if (s10.admissionProcess) tr.admissionProcess = s10.admissionProcess;
-  if (s9.courseFee) tr.feeClarity = `Course fee: ₹${s9.courseFee}`;
+  // Fee clarity — per-course fees now live on each course, so we
+  // summarize from the courses array when available and only fall back
+  // to the legacy single-fee string when an older draft still has it.
+  const courseFees = (s4.courses || [])
+    .map((c) => c && c.fees && c.fees.totalPayableAmount)
+    .filter(Boolean);
+  if (courseFees.length) {
+    tr.feeClarity = `Course fees: ${courseFees.map((f) => `₹${f}`).join(', ')}`;
+  } else if (s9.courseFee) {
+    tr.feeClarity = `Course fee: ₹${s9.courseFee}`;
+  }
   if (s9.refundPolicy) tr.refundPolicy = s9.refundPolicy;
   if (s9.cancellationPolicy) tr.termsAndConditions = s9.cancellationPolicy;
   if (Object.keys(tr).length) $set.transparency = tr;
+
+  // Per-course fee structures — copy the embedded fees[] block onto
+  // the public Institute so course listings can show the full
+  // breakdown (registration / admission / course / monthly / total /
+  // GST). Always emit an array (even if empty) to keep the field shape
+  // stable for downstream consumers.
+  if (Array.isArray(s4.courses) && s4.courses.length) {
+    $set.courseFees = s4.courses.map((c) => {
+      const f = (c && c.fees) || {};
+      return {
+        courseId: c && (c.id || c._id) ? String(c.id || c._id) : undefined,
+        courseName: c && (c.name || c.courseName) ? String(c.name || c.courseName) : undefined,
+        registrationFee: f.registrationFee || '',
+        admissionFee: f.admissionFee || '',
+        courseFee: f.courseFee || '',
+        monthlyFee: f.monthlyFee || '',
+        quarterlyFee: f.quarterlyFee || '',
+        materialFee: f.materialFee || '',
+        kitFee: f.kitFee || '',
+        examFee: f.examFee || '',
+        certificationFee: f.certificationFee || '',
+        otherCharges: f.otherCharges || '',
+        totalPayableAmount: f.totalPayableAmount || (c && c.totalFees) || '',
+        feeIncludesGst: f.feeIncludesGst === true
+      };
+    });
+  }
 
   // GST status — explicit boolean, not inferred from the amount.
   // Only persist on the public Institute when the draft has actually

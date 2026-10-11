@@ -47,7 +47,28 @@ const courseSchema = new mongoose.Schema({
   entranceExamRequired: Boolean,
   entranceExamName: String,
   outcomes: String,
-  skills: String
+  skills: String,
+  // Per-course fee structure. Different courses at the same institute
+  // can have different fees, so each course carries its own breakdown
+  // (registration / admission / course / monthly / quarterly /
+  // material / kit / exam / certification / other / total) plus an
+  // explicit feeIncludesGst boolean. Older drafts stored these on
+  // step9Fees; we still read that for backward compat (see the
+  // transform) but new entries land here.
+  fees: {
+    registrationFee: String,
+    admissionFee: String,
+    courseFee: String,
+    monthlyFee: String,
+    quarterlyFee: String,
+    materialFee: String,
+    kitFee: String,
+    examFee: String,
+    certificationFee: String,
+    otherCharges: String,
+    totalPayableAmount: String,
+    feeIncludesGst: { type: Boolean, default: false }
+  }
 }, { _id: false, strict: false });
 
 const batchSchema = new mongoose.Schema({
