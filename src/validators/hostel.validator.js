@@ -1,6 +1,10 @@
 import Joi from "joi";
 import { HOSTEL_TYPE } from "../constants/enums.js";
-import { AMENITY_KEYS } from "../constants/amenities.js";
+import {
+  AMENITY_KEYS,
+  AMENITY_ALIAS_KEYS,
+  normalizeAmenityList,
+} from "../constants/amenities.js";
 
 /* -------------------------------------------------------------------------- */
 /*                          🔥 GLOBAL HELPERS (IMPORTANT)                     */
@@ -24,6 +28,27 @@ const parseJSON = (value, helpers) => {
   }
   return value;
 };
+
+/* -------------------------------------------------------------------------- */
+/*                              AMENITY SCHEMA                                 */
+/* -------------------------------------------------------------------------- */
+/**
+ * Amenity arrays accept the canonical keys *and* the legacy spellings listed
+ * in AMENITY_ALIASES. Legacy values are rewritten to their canonical key
+ * before the payload is stored, so the same selection always ends up under
+ * the same key no matter which client sent it.
+ *
+ * Without this, a client that still sends the old spelling fails the whole
+ * registration with a 400 and the owner loses their form data.
+ */
+const amenityList = Joi.alternatives()
+  .try(
+    Joi.array()
+      .items(Joi.string().valid(...AMENITY_KEYS, ...AMENITY_ALIAS_KEYS))
+      .custom(normalizeAmenityList),
+    Joi.string().custom(parseJSON)
+  )
+  .default([]);
 
 /* -------------------------------------------------------------------------- */
 /*                              ENUM CONSTANTS                                */
@@ -190,51 +215,19 @@ export const createHostelSchema = Joi.object({
 
   /* ---------------------------- Amenities ------------------------------- */
 
-  in_room_amenities: Joi.alternatives()
-    .try(
-      Joi.array().items(Joi.string().valid(...AMENITY_KEYS)),
-      Joi.string().custom(parseJSON)
-    )
-    .default([]),
+  in_room_amenities: amenityList,
 
-  washroom_amenities: Joi.alternatives()
-    .try(
-      Joi.array().items(Joi.string().valid(...AMENITY_KEYS)),
-      Joi.string().custom(parseJSON)
-    )
-    .default([]),
+  washroom_amenities: amenityList,
 
-  utilities: Joi.alternatives()
-    .try(
-      Joi.array().items(Joi.string().valid(...AMENITY_KEYS)),
-      Joi.string().custom(parseJSON)
-    )
-    .default([]),
+  utilities: amenityList,
 
-  cleaning: Joi.alternatives()
-    .try(
-      Joi.array().items(Joi.string().valid(...AMENITY_KEYS)),
-      Joi.string().custom(parseJSON)
-    )
-    .default([]),
+  cleaning: amenityList,
 
-  building_amenities: Joi.alternatives()
-    .try(
-      Joi.array().items(Joi.string().valid(...AMENITY_KEYS)),
-      Joi.string().custom(parseJSON)
-    )
-    .default([]),
+  building_amenities: amenityList,
 
-  common_amenities: Joi.alternatives()
-    .try(
-      Joi.array().items(Joi.string().valid(...AMENITY_KEYS)),
-      Joi.string().custom(parseJSON)
-    )
-    .default([]),
+  common_amenities: amenityList,
 
-  recreation: Joi.array()
-    .items(Joi.string().valid(...AMENITY_KEYS))
-    .default([]),
+  recreation: amenityList,
 
   /* ----------------------------- Laundry -------------------------------- */
 

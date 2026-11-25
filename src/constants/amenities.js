@@ -113,4 +113,38 @@ const AMENITIES = {
 // Yeh loop saare keys ko ek single array mein nikaal lega for Validation
 export const AMENITY_KEYS = Object.values(AMENITIES).flatMap((cat) => cat.map((a) => a.key));
 
+/* -------------------------------------------------------------------------- */
+/*                        LEGACY ALIASES (BACK-COMPAT)                        */
+/* -------------------------------------------------------------------------- */
+/**
+ * Older clients (the pre-2024 public website, the owner dashboard and any
+ * browser that still has a cached bundle) used a few slightly different
+ * spellings. The keys below are the canonical ones - the API is the source
+ * of truth - so instead of rejecting those submissions outright we rewrite
+ * the legacy spelling onto the canonical key before validation runs.
+ *
+ * Keep this map append-only: removing an entry would break clients that are
+ * still in the wild.
+ */
+export const AMENITY_ALIASES = {
+  separate_bath_toilet: "separate_bath_and_toilet",
+  "6_days_week_cleaning": "6_days_in_a_week",
+  "5_days_week_cleaning": "5_days_in_a_week",
+  common_tv: "tv_in_common_area",
+};
+
+export const AMENITY_ALIAS_KEYS = Object.keys(AMENITY_ALIASES);
+
+/**
+ * Maps a single (possibly legacy) amenity key onto its canonical form.
+ * Unknown keys are returned untouched so Joi can reject them as usual.
+ */
+export const normalizeAmenityKey = (key) => AMENITY_ALIASES[key] ?? key;
+
+/**
+ * Maps a list of amenity keys onto their canonical form.
+ */
+export const normalizeAmenityList = (list) =>
+  Array.isArray(list) ? list.map(normalizeAmenityKey) : list;
+
 export default AMENITIES;
