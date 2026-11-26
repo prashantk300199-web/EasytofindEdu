@@ -1,6 +1,7 @@
 import Hostel from "../models/Hostel.js";
 import User from "../models/User.js";
 import HostelInquiry from "../models/HostelInquiry.js";
+import mongoose from "mongoose";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
@@ -71,6 +72,28 @@ const validateBody = (schema, data) => {
 
   logger.debug("Validation passed", { fields: Object.keys(value) });
   return value;
+};
+
+/**
+ * Converts a Mongoose ValidationError into the same field-level shape the
+ * Joi validation path produces.
+ *
+ * The Joi schema and the Mongoose model are two separate definitions of
+ * "what a hostel may look like", so a payload can pass Joi and still be
+ * rejected by the model on save. Without this, such a rejection surfaced as
+ * a generic 500 with no indication of which field was wrong, which is
+ * impossible for the owner to act on.
+ *
+ * @param {Error} error - The thrown error
+ * @returns {Array<{field: string, message: string, type: string}>|null}
+ */
+const modelValidationErrors = (error) => {
+  if (!(error instanceof mongoose.Error.ValidationError)) return null;
+  return Object.entries(error.errors).map(([field, err]) => ({
+    field,
+    message: err.message,
+    type: err.kind || "any.invalid",
+  }));
 };
 
 /**
@@ -296,6 +319,15 @@ export const createHostel = asyncHandler(async (req, res) => {
     }
 
     if (!(error instanceof ApiError)) {
+      const modelErrors = modelValidationErrors(error);
+      if (modelErrors) {
+        logger.warn("Schema validation failed", { userId, errors: modelErrors });
+        throw new ApiError(
+          400,
+          "Validation failed. Please check all required fields.",
+          modelErrors
+        );
+      }
       logger.error("Unexpected error in createHostel", { userId, error: error.message, stack: error.stack });
       throw new ApiError(500, "An unexpected error occurred while creating the hostel. Please try again.");
     }
@@ -644,6 +676,15 @@ export const updateHostel = asyncHandler(async (req, res) => {
       await cleanupUploadedFiles(uploadedPublicIds);
     }
     if (!(error instanceof ApiError)) {
+      const modelErrors = modelValidationErrors(error);
+      if (modelErrors) {
+        logger.warn("Schema validation failed during update", { id, userId, errors: modelErrors });
+        throw new ApiError(
+          400,
+          "Validation failed. Please check all required fields.",
+          modelErrors
+        );
+      }
       logger.error("Error in updateHostel", { error: error.message });
       throw new ApiError(500, "An error occurred while updating the hostel.");
     }

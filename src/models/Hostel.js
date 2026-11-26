@@ -55,7 +55,13 @@ const hostelSchema = new mongoose.Schema({
     line1: { type: String, required: true },
     line2: { type: String, default: "" },
     area: { type: String, required: true, index: true },
-    subarea: { type: String, required: true },
+    // Subarea is optional. The address form leaves it unset by default
+    // (the dropdown's first entry is "Select Subarea"), and the Joi
+    // schema accepts an empty string for it. Keeping this `required`
+    // here meant Hostel.create() rejected the record with a
+    // ValidationError, which surfaced as a generic 500 instead of the
+    // field-level 400 the owner could act on.
+    subarea: { type: String, default: "", trim: true },
     city: { type: String, required: true, index: true },
     state: { type: String, required: true },
     pincode: { type: String, required: true },
