@@ -40,6 +40,11 @@ const distanceItemSchema = new mongoose.Schema({
   distance_km: { type: Number, required: true, min: 0 }
 }, { _id: true });
 
+const locationSchema = new mongoose.Schema({
+  type: { type: String, enum: ["Point"], default: "Point" },
+  coordinates: { type: [Number], default: undefined },
+}, { _id: false });
+
 const hostelSchema = new mongoose.Schema({
   owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
   name: { type: String, required: true, trim: true, maxlength: 200 },
@@ -68,14 +73,17 @@ const hostelSchema = new mongoose.Schema({
     country: { type: String, default: "India" },
   },
   location: {
-    type: { type: String, enum: ["Point"], default: "Point" },
     // Coordinates are optional. Owners can register a hostel without
-    // picking a Google Maps location — the textual address fields
-    // are what the platform uses for search and contact. A `null`
-    // array is the safe default; the 2dsphere index skips null
-    // coordinates, so records without a map selection just don't
-    // appear in geo-proximity queries.
-    coordinates: { type: [Number], default: undefined, required: false },
+    // picking a Google Maps location - the textual address fields are
+    // what the platform uses for search and contact.
+    //
+    // The 2dsphere index below only tolerates a *missing* geo field. A
+    // location of { type: "Point" } with no coordinates (or with null
+    // coordinates) makes MongoDB reject the whole write with "Can't
+    // extract geo keys", so a hostel without a map pin stores no
+    // location at all. See the pre-save hook below.
+    type: locationSchema,
+    default: undefined,
   },
   rent: {
     security_deposit_type: {
@@ -199,6 +207,24 @@ const hostelSchema = new mongoose.Schema({
 
 hostelSchema.index({ location: "2dsphere" });
 hostelSchema.index({ name: "text", "address.city": "text", "address.area": "text" });
+
+// The 2dsphere index refuses to index a document whose geo field is
+// present but has no usable coordinates - MongoDB rejects the write with
+// "Can't extract geo keys: ... Point must be an array or object". Only a
+// *missing* geo field is skipped by the index, so a hostel saved without
+// a map pin has to drop the whole `location` subdocument.
+//
+// Doing it on save covers every write path - the create endpoint, the
+// owner dashboard update and the admin panel - and also protects any
+// record that still carries an empty location from failing on a later
+// edit.
+hostelSchema.pre("save", function (next) {
+  const loc = this.location;
+  if (loc && (loc.coordinates === null || loc.coordinates === undefined)) {
+    this.location = undefined;
+  }
+  next();
+});
 
 const Hostel = mongoose.model("Hostel", hostelSchema);
 export default Hostel;
